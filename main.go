@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"image/png"
 	"nonamevote/internal/account"
+	"os"
 	"path/filepath"
 
 	"github.com/gin-gonic/gin"
@@ -16,8 +17,14 @@ var register = filepath.Join(html, "register.html")
 var index = filepath.Join(html, "index.html")
 var pleasesavetotp = filepath.Join(html, "pleasesavetotp.html")
 
+var (
+	cert []byte
+	key  []byte
+)
+
 func main() {
 	s := gin.Default()
+	s.UseH2C = true
 	s.GET("/", func(ctx *gin.Context) {
 		ctx.File(index)
 	})
@@ -30,7 +37,10 @@ func main() {
 			ctx.String(200, "注册失败，因为没有提供用户名")
 			return
 		}
-		user := account.NewUser(name)
+		user, err := account.NewUser(name)
+		if err != nil {
+			ctx.String(200, err.Error())
+		}
 		account.Db.Add(user)
 		account.Db.SaveToOS()
 		key, err := otp.NewKeyFromURL(user.TotpURL)
@@ -48,5 +58,26 @@ func main() {
 		}
 		ctx.Writer.Write(buf.Bytes())
 	})
-	s.Run(":560")
+	s.RunTLS(":560", "./cert.pem", "./key.pem")
+}
+
+func init() {
+	initHttps()
+}
+
+func initHttps() {
+	var err error
+	cert, err = os.ReadFile("./cert.pem")
+	if err != nil {
+		if os.IsNotExist(err) {
+			GenSSL()
+			initHttps()
+			return
+		}
+		panic(err)
+	}
+	key, err = os.ReadFile("./key.pem")
+	if err != nil {
+		panic(err)
+	}
 }

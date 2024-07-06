@@ -9,8 +9,10 @@ import (
 )
 
 type User struct {
-	Name    string
-	TotpURL string
+	Name         string
+	TotpURL      string
+	SessionIndex int8
+	Session      [3][16]byte
 }
 
 func NewUser(Name string) (User, error) {
@@ -18,10 +20,11 @@ func NewUser(Name string) (User, error) {
 	if ok {
 		return User{}, fmt.Errorf("用户名 %s 已被注册", Name)
 	}
+	username[Name] = struct{}{}
 	key, err := totp.Generate(totp.GenerateOpts{
 		Issuer:      "无记名投票",
 		AccountName: Name,
-		SecretSize:  256,
+		SecretSize:  192,
 		Rand:        rand.Reader,
 	})
 	if err != nil {
@@ -30,14 +33,32 @@ func NewUser(Name string) (User, error) {
 	return User{Name: Name, TotpURL: key.URL()}, nil
 }
 
-var Db = data.NewTable[User]("./user")
+var UserDb = data.NewTable[User]("./user")
 
-var username map[string]struct{}
+var username = make(map[string]struct{})
 
 func init() {
-	Db.LoadToOS()
-	for i := range Db.Data {
+	UserDb.LoadToOS()
+	for i := range UserDb.Data {
 		//记录用户不会允许重名，所以这里不要检查重名
-		username[Db.Data[i].Name] = struct{}{}
+		username[UserDb.Data[i].Name] = struct{}{}
 	}
+}
+
+func GetUser(Name string) User {
+	for i := range UserDb.Data {
+		if UserDb.Data[i].Name == Name {
+			return UserDb.Data[i]
+		}
+	}
+	return User{}
+}
+
+func ReplaceUser(v User) {
+	for i := range UserDb.Data {
+		if UserDb.Data[i].Name == v.Name {
+			UserDb.Data[i] = v
+		}
+	}
+	UserDb.SaveToOS()
 }

@@ -36,8 +36,11 @@ func (t *Table[T]) SaveToOS() {
 		panic(err)
 	}
 	defer fd.Close()
-	en := json.NewEncoder(fd)
-	err = en.Encode(t)
+	j, err := json.MarshalIndent(t, "", "    ")
+	if err != nil {
+		panic(err)
+	}
+	_, err = fd.Write(j)
 	if err != nil {
 		panic(err)
 	}

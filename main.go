@@ -29,10 +29,33 @@ var login = filepath.Join(html, "login.html")
 var (
 	cert []byte
 	key  []byte
+	s    = gin.Default()
 )
 
 func main() {
-	s := gin.Default()
+}
+
+func genTotpImg(user account.User) []byte {
+	key, err := otp.NewKeyFromURL(user.TotpURL)
+	if err != nil {
+		panic(err)
+	}
+	img, err := key.Image(800, 800)
+	if err != nil {
+		panic(err)
+	}
+	var buf bytes.Buffer
+	err = png.Encode(&buf, img)
+	if err != nil {
+		panic(err)
+	}
+	return buf.Bytes()
+}
+
+func init() {
+	initHttps()
+	initRSA()
+
 	s.UseH2C = true
 	s.GET("/", func(ctx *gin.Context) {
 		ctx.File(index)
@@ -43,47 +66,34 @@ func main() {
 	s.POST("/register", func(ctx *gin.Context) {
 		name := ctx.PostForm("name")
 		if name == "" {
-			ctx.String(200, "注册失败，因为没有提供用户名")
+			ctx.String(401, "注册失败，因为没有提供用户名")
 			return
 		}
 		user, err := account.NewUser(name)
 		if err != nil {
-			ctx.String(200, err.Error())
+			ctx.String(401, err.Error())
 			return
 		}
-		account.UserDb.Add(user)
-		account.UserDb.SaveToOS()
 		buf := genTotpImg(user)
 		ctx.Writer.Write(buf)
 	})
 	s.GET("/login", func(ctx *gin.Context) {
 		s, err := ctx.Request.Cookie("session")
 		if err == nil {
-			var se account.Session
-			v, err := url.QueryUnescape(s.Value)
-			if err != nil {
-				slog.Error("", err)
-			} else {
-				b, err := rsa.DecryptOAEP(sha256.New(), rand.Reader, privkey, unsafe.Slice(unsafe.StringData(v), len(v)), nil)
-				if err != nil {
-					slog.Error("", err)
-				} else {
-					ok := se.Load(unsafe.String(&b[0], len(b)))
-					if ok {
-						for i := range account.SessionDb.Data {
-							if account.SessionDb.Data[i].Value == se.Value {
-								if ok, err := account.SessionDb.Data[i].Check(se, i); ok {
-									ctx.String(200, "登录成功")
-									return
-								} else {
-									if err != nil {
-										ctx.String(401, "登录失败：%s", err.Error())
-										return
-									}
-								}
-								break
+			ok, se := DecodeSession(s.Value)
+			if ok {
+				for i, v := range account.SessionDb.Data {
+					if v.Value == se.Value {
+						if ok, err := v.Check(se, i); ok {
+							ctx.String(200, "登录成功")
+							return
+						} else {
+							if err != nil {
+								ctx.String(401, "登录失败：%s", err.Error())
+								return
 							}
 						}
+						break
 					}
 				}
 			}
@@ -95,17 +105,17 @@ func main() {
 	s.POST("/login", func(ctx *gin.Context) {
 		name := ctx.PostForm("name")
 		if name == "" {
-			ctx.String(200, "登录失败，因为没有提供用户名")
+			ctx.String(401, "登录失败，因为没有提供用户名")
 			return
 		}
 		code := ctx.PostForm("totp")
 		if len(code) != 6 {
-			ctx.String(200, "登录失败，因为totp验证码必须是6位数")
+			ctx.String(401, "登录失败，因为totp验证码必须是6位数")
 			return
 		}
 		user := account.GetUser(name)
 		if user.Name == "" {
-			ctx.String(200, "登录失败，因为没有这个用户名")
+			ctx.String(401, "登录失败，因为没有这个用户")
 			return
 		}
 		key, err := otp.NewKeyFromURL(user.TotpURL)
@@ -130,30 +140,38 @@ func main() {
 		account.ReplaceUser(user)
 		ctx.String(200, "登录成功")
 	})
-	s.RunTLS(":560", "./cert.pem", "./key.pem")
+	if Test {
+		go func() {
+			err := s.RunTLS(":560", "./cert.pem", "./key.pem")
+			if err != nil {
+				panic(err)
+			}
+		}()
+		return
+	}
+	err := s.RunTLS(":560", "./cert.pem", "./key.pem")
+	if err != nil {
+		panic(err)
+	}
 }
 
-func genTotpImg(user account.User) []byte {
-	key, err := otp.NewKeyFromURL(user.TotpURL)
+func DecodeSession(v string) (bool, account.Session) {
+	v, err := url.QueryUnescape(v)
 	if err != nil {
-		panic(err)
+		slog.Error("", "err", err)
+		return false, account.Session{}
 	}
-	img, err := key.Image(800, 800)
+	b, err := rsa.DecryptOAEP(sha256.New(), rand.Reader, privkey, unsafe.Slice(unsafe.StringData(v), len(v)), nil)
 	if err != nil {
-		panic(err)
+		slog.Error("", "err", err)
+		return false, account.Session{}
 	}
-	var buf bytes.Buffer
-	err = png.Encode(&buf, img)
-	if err != nil {
-		panic(err)
-	}
-	return buf.Bytes()
+	var se account.Session
+	ok := se.Load(unsafe.String(&b[0], len(b)))
+	return ok, se
 }
 
-func init() {
-	initHttps()
-	initRSA()
-}
+var Test = true
 
 func initHttps() {
 	var err error

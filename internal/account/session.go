@@ -18,6 +18,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+var Test = false
+
 type Session struct {
 	Value      string
 	Ip         IPInfo
@@ -42,9 +44,11 @@ func NewSession(ctx *gin.Context, Name string) Session {
 	}
 	s.CreateTime = time.Now()
 	s.Name = Name
-	s.Ip, err = getIPInfo(ctx.ClientIP())
-	if err != nil {
-		panic(err)
+	if !Test { //不要在测试时获取IP属地
+		s.Ip, err = getIPInfo(ctx.ClientIP())
+		if err != nil {
+			panic(err)
+		}
 	}
 	s.Os = getOS(ctx)
 	return s
@@ -61,19 +65,19 @@ func (s *Session) EnCode() string {
 // Check 检查用户的session是否有效
 func (s *Session) Check(users Session, i int) (bool, error) {
 	if users.CreateTime != s.CreateTime {
-		slices.Delete(SessionDb.Data, i, i+1)
+		SessionDb.DeleteIndex(i)
 		return false, nil
 	}
 	//如果session过期
 	if users.CreateTime.Sub(time.Now()) > sessionMaxAge {
-		slices.Delete(SessionDb.Data, i, i+1)
+		SessionDb.DeleteIndex(i)
 		return false, nil
 	}
 	if users.Ip != s.Ip {
 		if s.Ip.Country == "" {
 			return false, nil
 		}
-		slices.Delete(SessionDb.Data, i, i+1)
+		SessionDb.DeleteIndex(i)
 		return false, errors.New("IP地址在两次登录时不在同一个国家，请重新登录")
 	}
 	if users.Os != s.Os {
@@ -81,12 +85,12 @@ func (s *Session) Check(users Session, i int) (bool, error) {
 	}
 	user := GetUser(users.Name)
 	if user.Name == "" {
-		slices.Delete(SessionDb.Data, i, i+1)
+		SessionDb.DeleteIndex(i)
 		return false, nil
 	}
 	m := md5.Sum(unsafe.Slice(unsafe.StringData(users.Value), len(users.Value)))
 	if !slices.Contains(user.Session[:], m) {
-		slices.Delete(SessionDb.Data, i, i+1)
+		SessionDb.DeleteIndex(i)
 		return false, nil
 	}
 	return true, nil
@@ -145,12 +149,13 @@ const sessionMaxAge = time.Hour * 1
 func init() {
 	SessionDb.LoadToOS()
 	now := time.Now()
-	for i := range SessionDb.Data {
+	SessionDb.Delete(func(s Session) bool {
 		//TODO:优化删除过时session,避免找到一个就删除一个
-		diff := SessionDb.Data[i].CreateTime.Sub(now)
+		diff := s.CreateTime.Sub(now)
 		if diff > sessionMaxAge {
-			slices.Delete(SessionDb.Data, i, i+1)
+			return true
 		}
-	}
+		return false
+	})
 	SessionDb.SaveToOS()
 }

@@ -7,10 +7,8 @@ import (
 	"crypto/rsa"
 	"crypto/sha256"
 	"image/png"
-	"log/slog"
-	"net/http"
-	"net/url"
 	"nonamevote/internal/account"
+	"nonamevote/internal/vote"
 	"os"
 	"path/filepath"
 	"unsafe"
@@ -25,6 +23,7 @@ var html = filepath.Join("."+string(filepath.Separator), "html")
 var register = filepath.Join(html, "register.html")
 var index = filepath.Join(html, "index.html")
 var login = filepath.Join(html, "login.html")
+var createvote = filepath.Join(html, "createvote.html")
 
 var (
 	cert []byte
@@ -56,6 +55,9 @@ func init() {
 	initHttps()
 	initRSA()
 
+	vote.S = s
+	account.Privkey = privkey
+
 	s.UseH2C = true
 	s.GET("/", func(ctx *gin.Context) {
 		ctx.File(index)
@@ -78,27 +80,14 @@ func init() {
 		ctx.Writer.Write(buf)
 	})
 	s.GET("/login", func(ctx *gin.Context) {
-		s, err := ctx.Request.Cookie("session")
-		if err == nil {
-			ok, se := DecodeSession(s.Value)
-			if ok {
-				for i, v := range account.SessionDb.Data {
-					if v.Value == se.Value {
-						if ok, err := v.Check(se, i); ok {
-							ctx.String(200, "登录成功")
-							return
-						} else {
-							if err != nil {
-								ctx.String(401, "登录失败：%s", err.Error())
-								return
-							}
-						}
-						break
-					}
-				}
-			}
-		} else if err != http.ErrNoCookie {
-			panic(err)
+		//先考虑是否已经登录
+		ok, err := account.CheckLogined(ctx)
+		if ok {
+			ctx.String(200, "登录成功")
+			return
+		}
+		if err != nil {
+			ctx.String(401, "登录失败：%s", err.Error())
 		}
 		ctx.File(login)
 	})
@@ -140,6 +129,33 @@ func init() {
 		account.ReplaceUser(user)
 		ctx.String(200, "登录成功")
 	})
+	s.GET("/createvote", func(ctx *gin.Context) {
+		ctx.File(createvote)
+	})
+	s.POST("/createvote", func(ctx *gin.Context) {
+		//先检查是否已登录
+		ok, err := account.CheckLogined(ctx)
+		if !ok {
+			if err != nil {
+				ctx.String(401, "登录失败：%s", err.Error())
+				return
+			}
+			ctx.String(401, "已登录用户才能创建投票")
+			return
+		}
+		_, err = vote.ParserCreateVote(ctx)
+		if err != nil {
+			ctx.String(401, "创建投票失败：%s", err.Error())
+			return
+		}
+		ctx.String(200, "创建投票成功")
+	})
+
+	// 创建投票网页
+	for _, v := range vote.Db.Data {
+		vote.AddVoteHtml(v)
+	}
+
 	if Test {
 		go func() {
 			err := s.RunTLS(":560", "./cert.pem", "./key.pem")
@@ -155,23 +171,7 @@ func init() {
 	}
 }
 
-func DecodeSession(v string) (bool, account.Session) {
-	v, err := url.QueryUnescape(v)
-	if err != nil {
-		slog.Error("", "err", err)
-		return false, account.Session{}
-	}
-	b, err := rsa.DecryptOAEP(sha256.New(), rand.Reader, privkey, unsafe.Slice(unsafe.StringData(v), len(v)), nil)
-	if err != nil {
-		slog.Error("", "err", err)
-		return false, account.Session{}
-	}
-	var se account.Session
-	ok := se.Load(unsafe.String(&b[0], len(b)))
-	return ok, se
-}
-
-var Test = true
+var Test = false
 
 func initHttps() {
 	var err error

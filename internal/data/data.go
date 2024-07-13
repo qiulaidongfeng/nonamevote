@@ -108,4 +108,8 @@ func (t *Table[T]) DeleteIndex(i int) {
 	_ = slices.Delete(t.t.Data, i, i+1)
 }
 
+func (t *Table[T]) Len() int {
+	return len(t.t.Data)
+}
+
 var Test = false

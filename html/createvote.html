@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<head>
+    <meta charset="UTF-8">
+    <title>创建投票</title>
+    <style>
+        h1{
+            text-align: center;
+        }
+        textarea{
+            block-size: 100px;
+        }
+    </style>
+</head>
+<body>
+    <h1>创建投票</h1>
+    <form action="/createvote" method="post">
+        投票名：<input type="text" name="name">
+        <br><br>
+        截止时间（年月日）：<input type="date" name="date">
+        <br><br>
+        截止时间（时间）：<input type="time" name="time">
+        <br><br>
+        介绍：<textarea name="introduce" rows="auto" cols="100"></textarea>
+        <br><br>
+        选项：<textarea name="option" rows="auto" cols="100"></textarea>
+        <p>以选项1 选项2的格式填写选项文本，示例A B表示第一个选项叫A，第二个选项叫B。</p>
+        提交：<input type="submit">
+    </form>
+</body>
+</html>

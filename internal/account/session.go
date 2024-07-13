@@ -3,11 +3,15 @@ package account
 import (
 	"crypto/md5"
 	"crypto/rand"
+	"crypto/rsa"
+	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"io"
+	"log/slog"
 	"net/http"
+	"net/url"
 	"nonamevote/internal/codec"
 	"nonamevote/internal/data"
 	"slices"
@@ -71,7 +75,7 @@ func (s *Session) Check(users Session, i int) (bool, error) {
 	//如果session过期
 	if users.CreateTime.Sub(time.Now()) > sessionMaxAge {
 		SessionDb.DeleteIndex(i)
-		return false, nil
+		return false, errors.New("登录过期，请重新登录")
 	}
 	if users.Ip != s.Ip {
 		if s.Ip.Country == "" {
@@ -159,3 +163,41 @@ func init() {
 	})
 	SessionDb.SaveToOS()
 }
+
+// CheckLogined 检查是否已经登录
+func CheckLogined(ctx *gin.Context) (bool, error) {
+	s, err := ctx.Request.Cookie("session")
+	if err == nil {
+		ok, se := DecodeSession(s.Value)
+		if ok {
+			for i, v := range SessionDb.Data {
+				if v.Value == se.Value {
+					ok, err := v.Check(se, i)
+					return ok, err
+
+				}
+			}
+		}
+	} else if err != http.ErrNoCookie {
+		panic(err)
+	}
+	return false, nil
+}
+
+func DecodeSession(v string) (bool, Session) {
+	v, err := url.QueryUnescape(v)
+	if err != nil {
+		slog.Error("", "err", err)
+		return false, Session{}
+	}
+	b, err := rsa.DecryptOAEP(sha256.New(), rand.Reader, Privkey, unsafe.Slice(unsafe.StringData(v), len(v)), nil)
+	if err != nil {
+		slog.Error("", "err", err)
+		return false, Session{}
+	}
+	var se Session
+	ok := se.Load(unsafe.String(&b[0], len(b)))
+	return ok, se
+}
+
+var Privkey *rsa.PrivateKey

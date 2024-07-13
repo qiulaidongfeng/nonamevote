@@ -92,6 +92,13 @@ func init() {
 		ctx.File(login)
 	})
 	s.POST("/login", func(ctx *gin.Context) {
+		//先考虑是否已经登录
+		ok, err := account.CheckLogined(ctx)
+		if ok {
+			ctx.String(200, "登录成功")
+			return
+		}
+
 		name := ctx.PostForm("name")
 		if name == "" {
 			ctx.String(401, "登录失败，因为没有提供用户名")

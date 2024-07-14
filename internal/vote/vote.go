@@ -102,7 +102,7 @@ func ParserCreateVote(ctx *gin.Context) (Info, error) {
 		ret.Option = append(ret.Option, Option{Name: options[i]})
 	}
 
-	Db.Add(&ret)
+	len := Db.Add(&ret)
 
 	type gen struct {
 		Info
@@ -127,7 +127,7 @@ func ParserCreateVote(ctx *gin.Context) (Info, error) {
 		}
 		ret.NologinHtml = b.String()
 	}
-	path := "vote/" + strconv.Itoa(Db.Len())
+	path := "vote/" + strconv.Itoa(len)
 	ret.Path = path
 	AddVoteHtml(&ret)
 

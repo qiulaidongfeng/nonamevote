@@ -12,7 +12,7 @@ import (
 type User struct {
 	Name         string
 	TotpURL      string
-	SessionIndex int8
+	SessionIndex uint8
 	Session      [3][16]byte
 }
 

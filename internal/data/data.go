@@ -9,7 +9,7 @@ import (
 
 type Table[T any] struct {
 	t    table[T]
-	lock sync.Mutex
+	lock sync.RWMutex
 }
 
 type table[T any] struct {
@@ -65,19 +65,27 @@ func (t *Table[T]) SaveToOS() {
 	}
 }
 
-func (t *Table[T]) Add(v T) {
+func (t *Table[T]) Add(v T) int {
 	t.lock.Lock()
 	defer t.lock.Unlock()
 	t.t.Data = append(t.t.Data, v)
+	return len(t.t.Data)
 }
 
 func (t *Table[T]) Data(yield func(int, T) bool) {
-	t.lock.Lock()
-	defer t.lock.Unlock()
-	for i, v := range t.t.Data {
+	i := 0
+	for {
+		t.lock.Lock()
+		if i >= len(t.t.Data) {
+			t.lock.Unlock()
+			break
+		}
+		v := t.t.Data[i]
+		t.lock.Unlock()
 		if !yield(i, v) {
 			break
 		}
+		i++
 	}
 }
 
@@ -106,10 +114,6 @@ func (t *Table[T]) DeleteIndex(i int) {
 	t.lock.Lock()
 	defer t.lock.Unlock()
 	_ = slices.Delete(t.t.Data, i, i+1)
-}
-
-func (t *Table[T]) Len() int {
-	return len(t.t.Data)
 }
 
 var Test = false

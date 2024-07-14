@@ -88,6 +88,7 @@ func init() {
 		}
 		if err != nil {
 			ctx.String(401, "登录失败：%s", err.Error())
+			return
 		}
 		ctx.File(login)
 	})

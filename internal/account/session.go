@@ -68,7 +68,7 @@ func (s *Session) EnCode() string {
 
 // Check 检查用户的session是否有效
 func (s *Session) Check(users Session, i int) (bool, error) {
-	if users.CreateTime != s.CreateTime {
+	if !users.CreateTime.Equal(s.CreateTime) {
 		SessionDb.DeleteIndex(i)
 		return false, nil
 	}

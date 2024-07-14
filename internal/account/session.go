@@ -155,11 +155,8 @@ func init() {
 	now := time.Now()
 	SessionDb.Delete(func(s Session) bool {
 		//TODO:优化删除过时session,避免找到一个就删除一个
-		diff := s.CreateTime.Sub(now)
-		if diff > sessionMaxAge {
-			return true
-		}
-		return false
+		diff := now.Sub(s.CreateTime)
+		return diff > sessionMaxAge
 	})
 	SessionDb.SaveToOS()
 }

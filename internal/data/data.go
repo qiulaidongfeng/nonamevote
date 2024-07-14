@@ -50,7 +50,7 @@ func (t *Table[T]) SaveToOS() {
 	}
 	t.lock.Lock()
 	defer t.lock.Unlock()
-	fd, err := os.OpenFile(t.t.Path, os.O_RDWR|os.O_CREATE, 0777)
+	fd, err := os.OpenFile(t.t.Path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0777)
 	if err != nil {
 		panic(err)
 	}
@@ -103,9 +103,10 @@ func (t *Table[T]) Replace(new T, ok func(T) bool) {
 func (t *Table[T]) Delete(delete func(T) bool) {
 	t.lock.Lock()
 	defer t.lock.Unlock()
-	for i, v := range t.t.Data {
+	for i := 0; i < len(t.t.Data); i++ {
+		v := t.t.Data[i]
 		if delete(v) {
-			_ = slices.Delete(t.t.Data, i, i+1)
+			t.t.Data = slices.Delete(t.t.Data, i, i+1)
 		}
 	}
 }
@@ -113,7 +114,7 @@ func (t *Table[T]) Delete(delete func(T) bool) {
 func (t *Table[T]) DeleteIndex(i int) {
 	t.lock.Lock()
 	defer t.lock.Unlock()
-	_ = slices.Delete(t.t.Data, i, i+1)
+	t.t.Data = slices.Delete(t.t.Data, i, i+1)
 }
 
 var Test = false

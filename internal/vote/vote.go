@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -127,7 +128,7 @@ func ParserCreateVote(ctx *gin.Context) (Info, error) {
 		}
 		ret.NologinHtml = b.String()
 	}
-	path := "vote/" + strconv.Itoa(len)
+	path := "/vote/" + strconv.Itoa(len)
 	ret.Path = path
 	AddVoteHtml(&ret)
 
@@ -147,11 +148,15 @@ var loc = func() *time.Location {
 
 var Db = data.NewTable[*Info]("./vote")
 
+var addvotelock sync.Mutex
+
 func init() {
 	Db.LoadToOS()
 }
 
 func AddVoteHtml(v *Info) {
+	addvotelock.Lock()
+	defer addvotelock.Unlock()
 	S.GET(v.Path, func(ctx *gin.Context) {
 		//先检查是否登录
 		ok, err := account.CheckLogined(ctx)

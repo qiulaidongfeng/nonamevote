@@ -26,26 +26,21 @@ var Test = false
 
 type Session struct {
 	Value      string
-	Ip         IPInfo
+	Ip         IPInfo `json:"-"`
 	CreateTime time.Time
-	Os         string
-	Name       string
+	Os         string `json:"-"`
+	Name       string `json:"-"`
 }
 
 func NewSession(ctx *gin.Context, Name string) Session {
 	s := Session{}
 	var b [256]byte
 	var err error
-	for {
-		_, err = rand.Read(b[:])
-		if err != nil {
-			panic(err)
-		}
-		s.Value = base64.StdEncoding.EncodeToString(b[:])
-		if !strings.Contains(s.Value, " ") {
-			break
-		}
+	_, err = rand.Read(b[:])
+	if err != nil {
+		panic(err)
 	}
+	s.Value = base64.StdEncoding.EncodeToString(b[:])
 	s.CreateTime = time.Now()
 	s.Name = Name
 	if !Test { //不要在测试时获取IP属地
@@ -67,35 +62,34 @@ func (s *Session) EnCode() string {
 }
 
 // Check 检查用户的session是否有效
-func (s *Session) Check(users Session, i int) (bool, error) {
-	if !users.CreateTime.Equal(s.CreateTime) {
-		SessionDb.DeleteIndex(i)
-		return false, nil
+func (s *Session) Check(ctx *gin.Context, cookie *http.Cookie, i int) (bool, error) {
+	if s.CreateTime.Sub(time.Now()) >= sessionMaxAge {
+		return false, errors.New("登录已失效，请重新登录")
 	}
-	//如果session过期
-	if users.CreateTime.Sub(time.Now()) > sessionMaxAge {
-		SessionDb.DeleteIndex(i)
-		return false, errors.New("登录过期，请重新登录")
-	}
-	if users.Ip != s.Ip {
-		if s.Ip.Country == "" {
-			return false, nil
+	//如果是测试或创建session时没有获得ip对应的国家，就不要检查ip对于的国家是否一致
+	if !Test && s.Ip.Country != "" {
+		userIp, err := getIPInfo(ctx.ClientIP())
+		if err != nil {
+			slog.Error("", "err", err)
 		}
-		SessionDb.DeleteIndex(i)
-		return false, errors.New("IP地址在两次登录时不在同一个国家，请重新登录")
+		if userIp != s.Ip && s.Ip.Country != "" && userIp.Country != "" {
+			SessionDb.DeleteIndex(i)
+			return false, errors.New("IP地址在两次登录时不在同一个国家，请重新登录")
+		}
 	}
-	if users.Os != s.Os {
+	useros := getOS(ctx)
+	if useros != s.Os {
 		return false, nil
 	}
-	user := GetUser(users.Name)
+	user := GetUser(s.Name)
 	if user.Name == "" {
 		SessionDb.DeleteIndex(i)
-		return false, nil
+		return false, errors.New("没有这个用户 " + s.Name)
 	}
-	m := md5.Sum(unsafe.Slice(unsafe.StringData(users.Value), len(users.Value)))
+	m := md5.Sum(unsafe.Slice(unsafe.StringData(s.Value), len(s.Value)))
 	if !slices.Contains(user.Session[:], m) {
 		SessionDb.DeleteIndex(i)
-		return false, nil
+		return false, errors.New("登录已失效，请重新登录")
 	}
 	return true, nil
 }
@@ -159,6 +153,22 @@ func init() {
 		return diff > sessionMaxAge
 	})
 	SessionDb.SaveToOS()
+	go func() {
+		for {
+			//每60秒保存一次session数据库，每经过一次session最大有效时间，检查一次所有session，有过期的删除。
+			select {
+			case <-time.Tick(60 * time.Second):
+				SessionDb.SaveToOS()
+			case <-time.Tick(sessionMaxAge):
+				for i, v := range SessionDb.Data {
+					diff := now.Sub(v.CreateTime)
+					if diff > sessionMaxAge {
+						SessionDb.DeleteIndex(i)
+					}
+				}
+			}
+		}
+	}()
 }
 
 // CheckLogined 检查是否已经登录
@@ -169,7 +179,7 @@ func CheckLogined(ctx *gin.Context) (bool, error) {
 		if ok {
 			for i, v := range SessionDb.Data {
 				if v.Value == se.Value {
-					ok, err := v.Check(se, i)
+					ok, err := se.Check(ctx, s, i)
 					return ok, err
 
 				}

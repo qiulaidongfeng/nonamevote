@@ -56,6 +56,14 @@ func genTotpImg(user account.User) []byte {
 }
 
 func init() {
+	Init()
+	// 创建投票网页
+	for _, v := range vote.Db.Data {
+		vote.AddVoteHtml(v)
+	}
+}
+
+func Init() {
 	initHttps()
 	initRSA()
 
@@ -162,11 +170,6 @@ func init() {
 		}
 		ctx.String(200, "创建投票成功")
 	})
-
-	// 创建投票网页
-	for _, v := range vote.Db.Data {
-		vote.AddVoteHtml(v)
-	}
 }
 
 func initHttps() {

@@ -32,6 +32,10 @@ var (
 )
 
 func main() {
+	err := s.RunTLS(":560", "./cert.pem", "./key.pem")
+	if err != nil {
+		panic(err)
+	}
 }
 
 func genTotpImg(user account.User) []byte {
@@ -163,23 +167,7 @@ func init() {
 	for _, v := range vote.Db.Data {
 		vote.AddVoteHtml(v)
 	}
-
-	if Test {
-		go func() {
-			err := s.RunTLS(":560", "./cert.pem", "./key.pem")
-			if err != nil {
-				panic(err)
-			}
-		}()
-		return
-	}
-	err := s.RunTLS(":560", "./cert.pem", "./key.pem")
-	if err != nil {
-		panic(err)
-	}
 }
-
-var Test = false
 
 func initHttps() {
 	var err error

@@ -23,6 +23,7 @@ type Info struct {
 	Introduce string
 	Path      string
 	Option    []Option
+	lock      sync.Mutex
 }
 
 type Option struct {
@@ -31,8 +32,8 @@ type Option struct {
 }
 
 // ParserCreateVote 从post请求表单中获取创建投票的信息
-func ParserCreateVote(ctx *gin.Context) (Info, error) {
-	var ret Info
+func ParserCreateVote(ctx *gin.Context) (*Info, error) {
+	var ret = &Info{}
 	name := ctx.PostForm("name")
 	if name == "" {
 		return ret, errors.New("投票名不能为空")
@@ -102,11 +103,11 @@ func ParserCreateVote(ctx *gin.Context) (Info, error) {
 		ret.Option = append(ret.Option, Option{Name: options[i]})
 	}
 
-	len, add := Db.Add(&ret)
+	len, add := Db.Add(ret)
 	path := "/vote/" + strconv.Itoa(len)
 	ret.Path = path
 	add()
-	AddVoteHtml(&ret)
+	AddVoteHtml(ret)
 
 	Db.SaveToOS()
 
@@ -184,6 +185,8 @@ func AddVoteHtml(v *Info) {
 		dv := Db.Find(v.Path)
 		option := ctx.PostForm("k")
 		opt, err := strconv.Atoi(option)
+		dv.lock.Lock()
+		defer dv.lock.Unlock()
 		if err != nil || opt >= len(dv.Option) {
 			ctx.String(401, "投票失败")
 			return
@@ -191,7 +194,7 @@ func AddVoteHtml(v *Info) {
 		dv.Option[opt].GotNum++
 		user.VotedPath = append(user.VotedPath, v.Path)
 		account.ReplaceUser(user)
-		ctx.String(401, "投票成功")
+		ctx.String(200, "投票成功")
 	})
 }
 
@@ -204,9 +207,12 @@ var votetmpl = func() *template.Template {
 	m := template.FuncMap{
 		"getOption": func(name string) []Option {
 			for _, v := range Db.Data {
+				v.lock.Lock()
 				if v.Name == name {
+					v.lock.Unlock()
 					return v.Option
 				}
+				v.lock.Unlock()
 			}
 			panic("未知的投票")
 		}}

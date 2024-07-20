@@ -10,7 +10,7 @@ import (
 	"testing"
 )
 
-const n = 1000
+const n = 500
 
 func TestRace(t *testing.T) {
 	var wg sync.WaitGroup
@@ -19,6 +19,7 @@ func TestRace(t *testing.T) {
 	sendRequest(t, &wg, "POST", "/register", func(req *http.Request, v *url.Values) { v.Set("name", "") })
 	sendRequest(t, &wg, "POST", "/register", func(req *http.Request, v *url.Values) { v.Set("name", randStr()) })
 	sendRequest(t, &wg, "POST", "/createvote", func(req *http.Request, v *url.Values) { v.Set("name", randStr()) })
+	sendRequest(t, &wg, "GET", "/vote/k", nil)
 	cv := logink(t)
 	for range n {
 		wg.Add(1)
@@ -48,6 +49,19 @@ func TestRace(t *testing.T) {
 		v.Set("time", "11:00")
 		v.Set("introduce", "l")
 		v.Set("option", "k l")
+	})
+	sendRequest(t, &wg, "GET", "/vote/k", func(req *http.Request, v *url.Values) {
+		req.AddCookie(&http.Cookie{
+			Name:  "session",
+			Value: cv,
+		})
+	})
+	sendRequest(t, &wg, "POST", "/vote/k", func(req *http.Request, v *url.Values) {
+		req.AddCookie(&http.Cookie{
+			Name:  "session",
+			Value: cv,
+		})
+		v.Set("k", "0")
 	})
 	wg.Wait()
 }

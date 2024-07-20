@@ -183,6 +183,10 @@ func AddVoteHtml(v *Info) {
 			return
 		}
 		dv := Db.Find(v.Path)
+		if !v.End.After(time.Now()) {
+			ctx.String(401, "投票失败：因为投票截止时间已经到了")
+			return
+		}
 		option := ctx.PostForm("k")
 		opt, err := strconv.Atoi(option)
 		dv.lock.Lock()

@@ -15,9 +15,9 @@
     <br>
     <pre>{{.Introduce}}</pre>
     <br>
-    <from action="/{{.Path}}" method="post">
+    <form action="{{.Path}}" method="post">
     {{range $i ,$v:= getOption .Name}}
-        选项{{$v.Name}}:得票数:{{$v.GotNum}}<input type="radio" name="k">选投
+        选项{{$v.Name}}:得票数:{{$v.GotNum}}<input type="radio" name="k" value="{{$i}}">选投
         <br>
     {{end}}
     {{if .Logined}}

@@ -8,6 +8,7 @@ import (
 	"nonamevote/internal/data"
 	"os"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -17,13 +18,11 @@ import (
 )
 
 type Info struct {
-	Name        string
-	End         time.Time
-	Introduce   string
-	Path        string
-	Html        string
-	NologinHtml string
-	Option      []Option
+	Name      string
+	End       time.Time
+	Introduce string
+	Path      string
+	Option    []Option
 }
 
 type Option struct {
@@ -103,33 +102,10 @@ func ParserCreateVote(ctx *gin.Context) (Info, error) {
 		ret.Option = append(ret.Option, Option{Name: options[i]})
 	}
 
-	len := Db.Add(&ret)
-
-	type gen struct {
-		Info
-		Logined bool
-	}
-
-	{ // 生成登录用户的投票网页
-		var b strings.Builder
-		err = votetmpl.Execute(&b, gen{Info: ret, Logined: true})
-		if err != nil {
-			slog.Error("", "err", err)
-			return ret, errors.New("生成投票网页失败")
-		}
-		ret.Html = b.String()
-	}
-	{ // 生成没登录用户的投票网页
-		var b strings.Builder
-		err = votetmpl.Execute(&b, gen{Info: ret, Logined: false})
-		if err != nil {
-			slog.Error("", "err", err)
-			return ret, errors.New("生成投票网页失败")
-		}
-		ret.NologinHtml = b.String()
-	}
+	len, add := Db.Add(&ret)
 	path := "/vote/" + strconv.Itoa(len)
 	ret.Path = path
+	add()
 	AddVoteHtml(&ret)
 
 	Db.SaveToOS()
@@ -146,12 +122,21 @@ var loc = func() *time.Location {
 	return loc
 }()
 
-var Db = data.NewTable[*Info]("./vote")
+var Db = data.NewMapTable[*Info]("./vote", func(i *Info) string { return i.Path })
 
 var addvotelock sync.Mutex
 
 func init() {
 	Db.LoadToOS()
+	go func() {
+		for {
+			// 每10秒保存一次数据库
+			select {
+			case <-time.Tick(10 * time.Second):
+				Db.SaveToOS()
+			}
+		}
+	}()
 }
 
 func AddVoteHtml(v *Info) {
@@ -159,18 +144,54 @@ func AddVoteHtml(v *Info) {
 	defer addvotelock.Unlock()
 	S.GET(v.Path, func(ctx *gin.Context) {
 		//先检查是否登录
-		ok, err := account.CheckLogined(ctx)
+		logined, err, _ := account.CheckLogined(ctx)
 		if err != nil {
 			ctx.String(401, err.Error())
 			return
 		}
 		//根据是否登录决定能看到的网页，不登录不能投票
-		ctx.Header("Content-Type", "text/html; charset=utf-8")
-		if ok {
-			ctx.String(200, v.Html)
-		} else {
-			ctx.String(200, v.NologinHtml)
+		type gen struct {
+			*Info
+			Logined bool
 		}
+		ret := Db.Find(v.Path)
+		var b strings.Builder
+		err = votetmpl.Execute(&b, gen{Info: ret, Logined: logined})
+		if err != nil {
+			slog.Error("", "err", err)
+			ctx.String(500, "internal server error")
+			return
+		}
+		ctx.Header("Content-Type", "text/html; charset=utf-8")
+		ctx.String(200, b.String())
+	})
+	S.POST(v.Path, func(ctx *gin.Context) {
+		//先检查是否登录
+		ok, err, se := account.CheckLogined(ctx)
+		if err != nil {
+			ctx.String(401, err.Error())
+			return
+		}
+		if !ok {
+			ctx.String(401, "需要登录才能投票")
+			return
+		}
+		user := account.GetUser(se.Name)
+		if slices.Contains(user.VotedPath, v.Path) {
+			ctx.String(401, "投票失败：因为已经投过票了")
+			return
+		}
+		dv := Db.Find(v.Path)
+		option := ctx.PostForm("k")
+		opt, err := strconv.Atoi(option)
+		if err != nil || opt >= len(dv.Option) {
+			ctx.String(401, "投票失败")
+			return
+		}
+		dv.Option[opt].GotNum++
+		user.VotedPath = append(user.VotedPath, v.Path)
+		account.ReplaceUser(user)
+		ctx.String(401, "投票成功")
 	})
 }
 

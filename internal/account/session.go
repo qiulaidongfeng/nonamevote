@@ -172,7 +172,7 @@ func init() {
 }
 
 // CheckLogined 检查是否已经登录
-func CheckLogined(ctx *gin.Context) (bool, error) {
+func CheckLogined(ctx *gin.Context) (bool, error, Session) {
 	s, err := ctx.Request.Cookie("session")
 	if err == nil {
 		ok, se := DecodeSession(s.Value)
@@ -180,7 +180,7 @@ func CheckLogined(ctx *gin.Context) (bool, error) {
 			for i, v := range SessionDb.Data {
 				if v.Value == se.Value {
 					ok, err := se.Check(ctx, s, i)
-					return ok, err
+					return ok, err, se
 
 				}
 			}
@@ -188,7 +188,7 @@ func CheckLogined(ctx *gin.Context) (bool, error) {
 	} else if err != http.ErrNoCookie {
 		panic(err)
 	}
-	return false, nil
+	return false, nil, Session{}
 }
 
 func DecodeSession(v string) (bool, Session) {

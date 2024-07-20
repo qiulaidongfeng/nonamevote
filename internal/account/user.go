@@ -14,6 +14,7 @@ type User struct {
 	TotpURL      string
 	SessionIndex uint8
 	Session      [3][16]byte
+	VotedPath    []string
 }
 
 func NewUser(Name string) (User, error) {

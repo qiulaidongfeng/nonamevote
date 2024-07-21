@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<head>
+    <meta charset="UTF-8">
+    <title>所有投票</title>
+    <style>
+        div{
+          float: left;
+          width: 20%;
+          height: 30px;
+          border: 1px solid black;
+        }
+        h1{
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <h1>所有投票</h1>
+    {{range $i, $v := getAllVote }}
+        <div>{{$v.Name}} <a href="{{$v.Path}}">进入</a></div>
+    {{end}}
+</body>
+</html>

@@ -13,6 +13,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unsafe"
 
 	"github.com/gin-gonic/gin"
 )
@@ -231,3 +232,41 @@ var votetmpl = func() *template.Template {
 	}
 	return t
 }()
+
+var allvotetmpl = func() *template.Template {
+	t := template.New("allvote")
+	m := template.FuncMap{
+		//TODO:等go模板支持range-over-func后，改为返回迭代器
+		"getAllVote": func() chan *Info {
+			c := make(chan *Info)
+			go func() {
+				for _, v := range Db.Data {
+					c <- v
+				}
+				close(c)
+			}()
+			return c
+		}}
+	t.Funcs(m)
+	file, err := os.ReadFile(filepath.Join(tmpl, "allvote.temp"))
+	if err != nil {
+		panic(err)
+	}
+	t, err = t.Parse(string(file))
+	if err != nil {
+		panic(err)
+	}
+	return t
+}()
+
+func AllVote(ctx *gin.Context) {
+	var b strings.Builder
+	err := allvotetmpl.Execute(&b, nil)
+	if err != nil {
+		slog.Error("", "err", err)
+		ctx.String(500, "internal server error")
+		return
+	}
+	s := b.String()
+	ctx.Data(200, "text/html", unsafe.Slice(unsafe.StringData(s), len(s)))
+}

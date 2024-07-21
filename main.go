@@ -170,6 +170,7 @@ func Init() {
 		}
 		ctx.String(200, "创建投票成功")
 	})
+	s.GET("/allvote", vote.AllVote)
 }
 
 func initHttps() {

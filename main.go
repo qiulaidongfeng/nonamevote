@@ -11,6 +11,7 @@ import (
 	"nonamevote/internal/vote"
 	"os"
 	"path/filepath"
+	_ "time/tzdata"
 	"unsafe"
 
 	"github.com/gin-gonic/gin"

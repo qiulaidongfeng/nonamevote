@@ -28,7 +28,7 @@ func TestCodeSession(t *testing.T) {
 func TestCodeSessionCookie(t *testing.T) {
 	s := account.Session{
 		Value:      "19063",
-		Ip:         account.IPInfo{Country: "c"},
+		Ip:         account.IPInfo{Country: "c b"},
 		Os:         "k",
 		CreateTime: time.Now(),
 	}

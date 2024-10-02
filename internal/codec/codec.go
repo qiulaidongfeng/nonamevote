@@ -16,10 +16,12 @@ import (
 field1 value1 field2 value2 ......
 
 time.Time 编码为它的UnixMicro()结果
+
+考虑到被编码值可能包含空格，所以编码后的分隔从空格改为byte(0)
 */
 
-const sep = " "
-const sepb = ' '
+const sep = string(sepb)
+const sepb = byte(0)
 
 func Encode(v any) string {
 	r := reflect.ValueOf(v)

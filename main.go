@@ -144,7 +144,7 @@ func Init() {
 		if err != nil {
 			panic(err)
 		}
-		ctx.SetCookie("session", unsafe.String(unsafe.SliceData(wc), len(wc)), account.SessionMaxAge, "", "", true, false)
+		ctx.SetCookie("session", unsafe.String(unsafe.SliceData(wc), len(wc)), account.SessionMaxAge, "", "", true, true)
 		user.Session[user.SessionIndex%3] = md5.Sum(unsafe.Slice(unsafe.StringData(se.Value), len(se.Value)))
 		user.SessionIndex++
 		account.ReplaceUser(user)

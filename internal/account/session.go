@@ -10,16 +10,20 @@ import (
 	"errors"
 	"io"
 	"log/slog"
+	"net"
 	"net/http"
 	"net/url"
 	"nonamevote/internal/codec"
 	"nonamevote/internal/data"
+	"os"
 	"slices"
 	"strings"
 	"time"
 	"unsafe"
 
 	"github.com/gin-gonic/gin"
+	"github.com/maxmind/mmdbinspect/pkg/mmdbinspect"
+	"github.com/oschwald/maxminddb-golang"
 )
 
 var Test = false
@@ -94,11 +98,38 @@ func (s *Session) Check(ctx *gin.Context, cookie *http.Cookie, i int) (bool, err
 	return true, nil
 }
 
+var findIpMode = 1
+
+var mmdb_db = func() *maxminddb.Reader {
+	db, err := mmdbinspect.OpenDB("country_asn.mmdb")
+	if err != nil {
+		panic(err)
+	}
+	return db
+}()
+
+func init() {
+	mode := os.Getenv("nonamevote_findIP")
+	if mode == "remote" {
+		findIpMode = 2
+	}
+}
+
 type IPInfo struct {
 	Country string `json:"country"`
 }
 
 func getIPInfo(ip string) (IPInfo, error) {
+	if findIpMode == 1 {
+		var m map[string]any
+		mmdb_db.Lookup(net.ParseIP(ip), &m)
+		if len(m) == 0 {
+			return IPInfo{Country: ""}, nil
+		}
+		country := m["country_name"].(string)
+		slog.Info("", "country", country)
+		return IPInfo{Country: country}, nil
+	}
 	// 使用一个公共的IP地理位置API服务
 	apiURL := "http://ip-api.com/json/" + ip
 

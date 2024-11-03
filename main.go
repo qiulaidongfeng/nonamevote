@@ -33,7 +33,7 @@ var (
 )
 
 func main() {
-	err := s.RunTLS(":560", "./cert.pem", "./key.pem")
+	err := s.RunTLS(":443", "./cert.pem", "./key.pem")
 	if err != nil {
 		panic(err)
 	}

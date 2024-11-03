@@ -172,6 +172,15 @@ func Init() {
 		ctx.String(200, "创建投票成功")
 	})
 	s.GET("/allvote", vote.AllVote)
+	s.GET("/exit", func(ctx *gin.Context) {
+		_, err := ctx.Cookie("session")
+		if err != nil {
+			ctx.String(401, "未登录")
+			return
+		}
+		ctx.SetCookie("session", "", -1, "", "", true, true)
+		ctx.String(200, "退出登录成功")
+	})
 }
 
 func initHttps() {

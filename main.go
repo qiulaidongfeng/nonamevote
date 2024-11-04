@@ -135,7 +135,10 @@ func Init() {
 			panic(err)
 		}
 		if !totp.Validate(code, key.Secret()) {
-			ctx.String(401, "登录失败：totp验证码不对")
+			ctx.String(401, `登录失败：totp验证码不对
+请排查以下原因
+1. 输入时输错了验证码
+2. 所有的设备时间不一致`)
 			return
 		}
 		se := account.NewSession(ctx, name)

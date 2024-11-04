@@ -1,23 +1,51 @@
-<!DOCTYPE html>
-<head>
-    <meta charset="UTF-8">
-    <title>所有投票</title>
-    <style>
-        div{
-          float: left;
-          width: 20%;
-          height: 30px;
-          border: 1px solid black;
-        }
-        h1{
-            text-align: center;
-        }
-    </style>
-</head>
-<body>
-    <h1>所有投票</h1>
-    {{range $i, $v := getAllVote }}
-        <div>{{$v.Name}} <a href="{{$v.Path}}">进入</a></div>
-    {{end}}
-</body>
+<!DOCTYPE html>  
+<html lang="zh-CN">  
+<head>  
+    <meta charset="UTF-8">  
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">  
+    <title>所有投票</title>  
+    <style>  
+        body {  
+            font-family: Arial, sans-serif;  
+            margin: 0;  
+            padding: 20px;  
+        }  
+        h1 {  
+            text-align: center;  
+            margin-bottom: 20px;  
+        }  
+        .vote-container {  
+            display: flex;  
+            flex-wrap: wrap;  
+            justify-content: center;  
+        }  
+        .vote-item {  
+            flex: 1 1 calc(20% - 20px); /* Adjust the percentage and subtract margin/padding */  
+            margin: 10px;  
+            border: 1px solid black;  
+            padding: 10px;  
+            box-sizing: border-box; /* Ensure padding and border are included in the width */  
+            text-align: center;  
+        }  
+        .vote-item a {  
+            text-decoration: none;  
+            color: blue;  
+        }  
+        .vote-item a:hover {  
+            text-decoration: underline;  
+        }  
+    </style>  
+</head>  
+<body>  
+    <h1>所有投票</h1>  
+    <div class="vote-container">  
+        {{range $i, $v := getAllVote}}  
+            <div class="vote-item">  
+                {{$v.Name}}  
+                <br>  
+                <a href="{{$v.Path}}">进入</a>  
+            </div>  
+        {{end}}  
+    </div>  
+</body>  
 </html>

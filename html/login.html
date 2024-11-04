@@ -1,15 +1,114 @@
-<!DOCTYPE html>
-<head>
-    <meta charset="UTF-8">
-    <title>login</title>
-</head>
-<body>
-    <form action="/login" method="post">
-        用户名：<input type="text" name="name">
-        <br><br>
-        totp验证码：<input type="number" name="totp">
-        <br><br>
-        提交：<input type="submit">
-    </form>
-</body>
+<!DOCTYPE html>  
+<html lang="zh-CN">  
+<head>  
+    <meta charset="UTF-8">  
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">  
+    <title>登录页面</title>  
+    <style>  
+        /* 全局样式重置 */  
+        body, h2, input, button {  
+            margin: 0;  
+            padding: 0;  
+            box-sizing: border-box;  
+            font-family: 'Arial', sans-serif;  
+        }  
+  
+        body {  
+            background-color: #f0f2f5;  
+            display: flex;  
+            justify-content: center;  
+            align-items: center;  
+            height: 100vh;  
+        }  
+  
+        .login-container {  
+            background-color: #ffffff;  
+            border-radius: 12px;  
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);  
+            padding: 30px;  
+            width: 100%;  
+            max-width: 400px;  
+            text-align: center;  
+        }  
+  
+        .login-container h2 {  
+            margin-bottom: 24px;  
+            font-size: 24px;  
+            color: #333333;  
+        }  
+  
+        .login-container label {  
+            display: block;  
+            margin: 0 0 8px;  
+            font-size: 16px;  
+            color: #666666;  
+        }  
+  
+        .login-container input[type="text"],  
+        .login-container input[type="number"] {  
+            width: 100%;  
+            padding: 12px;  
+            margin-bottom: 20px;  
+            border: 1px solid #dddddd;  
+            border-radius: 8px;  
+            font-size: 16px;  
+            color: #333333;  
+        }  
+  
+        .login-container input[type="submit"] {  
+            background-color: #5cb85c;  
+            border: none;  
+            color: #ffffff;  
+            padding: 12px;  
+            width: 100%;  
+            border-radius: 8px;  
+            font-size: 16px;  
+            cursor: pointer;  
+            transition: background-color 0.3s ease;  
+        }  
+  
+        .login-container input[type="submit"]:hover {  
+            background-color: #4cae4c;  
+        }  
+  
+        /* 响应式设计 */  
+        @media (max-width: 600px) {  
+            .login-container {  
+                padding: 20px;  
+            }  
+  
+            .login-container h2 {  
+                font-size: 20px;  
+            }  
+  
+            .login-container label,  
+            .login-container input[type="text"],  
+            .login-container input[type="number"],  
+            .login-container input[type="submit"] {  
+                font-size: 14px;  
+            }  
+  
+            .login-container input[type="text"],  
+            .login-container input[type="number"] {  
+                padding: 10px;  
+            }  
+  
+            .login-container input[type="submit"] {  
+                padding: 10px;  
+            }  
+        }  
+    </style>  
+</head>  
+<body>  
+    <div class="login-container">  
+        <h2>登录</h2>  
+        <form action="/login" method="post">  
+            <label for="username">用户名：</label>  
+            <input type="text" id="username" name="username" required>  
+            <label for="totp">TOTP验证码：</label>  
+            <input type="number" id="totp" name="totp" required>  
+            <button type="submit">提交</button>  
+        </form>  
+    </div>  
+</body>  
 </html>

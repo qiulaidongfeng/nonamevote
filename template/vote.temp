@@ -1,32 +1,41 @@
-<!DOCTYPE html>
-<head>
-    <meta charset="UTF-8">
-    <title>{{.Name}}</title>
-    <style>
-        h1{
-            text-align: center;
-        }
-    </style>
-</head>
-<body>
-    <h1>无记名投票</h1>
-    <br>
-    <p>投票名:{{.Name}}&nbsp;&nbsp;&nbsp;&nbsp;截止时间:{{.End}}</p>
-    <br>
-    <pre>{{.Introduce}}</pre>
-    <br>
-    <form action="{{.Path}}" method="post">
-    {{$Logined := .Logined}}
-    {{range $i ,$v:= getOption .Name}}
-        选项{{$v.Name}}:得票数:{{$v.GotNum}}
-        {{if $Logined}}
-        <input type="radio" name="k" value="{{$i}}">选投
-        {{end}}
-        <br>
-    {{end}}
-    {{if .Logined}}
-    提交：<input type="submit">
-    {{end}}
-    </form>
-</body>
+<!DOCTYPE html>  
+<html lang="zh-CN">  
+<head>  
+    <meta charset="UTF-8">  
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">  
+    <title>{{.Name}}</title>  
+    <style>  
+        body {  
+            font-family: Arial, sans-serif;  
+            text-align: center;  
+            margin: 0;  
+            padding: 20px;  
+        }  
+        h1 {  
+            margin-bottom: 20px;  
+        }  
+        form {  
+            margin-top: 20px;  
+        }  
+    </style>  
+</head>  
+<body>  
+    <h1>无记名投票</h1>  
+    <p>投票名: {{.Name}} &nbsp;&nbsp;&nbsp;&nbsp; 截止时间: {{.End}}</p>  
+    <pre>{{.Introduce}}</pre>  
+    <form action="{{.Path}}" method="post">  
+        {{$logined := .Logined}}  
+        {{range $index, $option := getOption .Name}}  
+            <div>  
+                选项 {{$option.Name}}: 得票数: {{$option.GotNum}}  
+                {{if $logined}}  
+                    <input type="radio" name="k" value="{{$index}}"> 选投  
+                {{end}}  
+            </div>  
+        {{end}}  
+        {{if $logined}}  
+            <button type="submit">提交</button>  
+        {{end}}  
+    </form>  
+</body>  
 </html>

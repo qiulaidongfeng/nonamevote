@@ -1,20 +1,72 @@
-<!DOCTYPE html>
-<head>
-    <meta charset="UTF-8">
-    <title>register</title>
-    <style>
-        h1{
-            text-align: center;
-        }
-    </style>
-</head>
-<body>
-    <h1>无记名投票</h1>
-    <p>注册按提交后，请扫描显示的二维码保存totp密钥</p>
-    <form action="/register" method="post">
-        用户名：<input type="text" name="name">
-        <br><br>
-        提交：<input type="submit">
-    </form>
-</body>
+<!DOCTYPE html>  
+<html lang="zh-CN">  
+<head>  
+    <meta charset="UTF-8">  
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">  
+    <title>注册页面</title>  
+    <style>  
+        body {  
+            font-family: Arial, sans-serif;  
+            margin: 0;  
+            padding: 20px;  
+            background-color: #f4f4f4;  
+        }  
+        main {  
+            max-width: 600px;  
+            margin: 0 auto;  
+            background: #fff;  
+            padding: 20px;  
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);  
+        }  
+        h1 {  
+            text-align: center;  
+        }  
+        p {  
+            line-height: 1.6;  
+        }  
+        ol {  
+            list-style-type: decimal;  
+            padding-left: 20px;  
+        }  
+        form {  
+            display: flex;  
+            flex-direction: column;  
+        }  
+        form label {  
+            margin-bottom: 5px;  
+        }  
+        form input[type="text"], form input[type="submit"] {  
+            margin-bottom: 15px;  
+            padding: 10px;  
+            border: 1px solid #ccc;  
+            border-radius: 4px;  
+        }  
+        form input[type="submit"] {  
+            background-color: #4CAF50;  
+            color: white;  
+            cursor: pointer;  
+        }  
+        form input[type="submit"]:hover {  
+            background-color: #45a049;  
+        }  
+    </style>  
+</head>  
+<body>  
+    <main>  
+        <h1>无记名投票注册</h1>  
+        <p>注册并提交后，请扫描显示的二维码保存TOTP密钥。</p>  
+        <p>TOTP（基于时间的一次性密码）是一种使用密钥和当前时间生成固定长度且很短时间有效的数字序列的算法。由于能抗暴力破解，后续将使用这个算法进行登录验证。</p>  
+        <p>以下是一些可以扫描二维码保存TOTP密钥的软件：</p>  
+        <ol>  
+            <li>Microsoft Authenticator</li>  
+            <li>Google Authenticator</li>  
+            <li><a href="https://github.com/jamie-mh/AuthenticatorPro" target="_blank">AuthenticatorPro</a></li>  
+        </ol>  
+        <form action="/register" method="post">  
+            <label for="name">用户名：</label>  
+            <input type="text" id="name" name="name" required>  
+            <input type="submit" value="提交">  
+        </form>  
+    </main>  
+</body>  
 </html>

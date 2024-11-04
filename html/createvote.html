@@ -1,30 +1,88 @@
-<!DOCTYPE html>
-<head>
-    <meta charset="UTF-8">
-    <title>创建投票</title>
-    <style>
-        h1{
-            text-align: center;
-        }
-        textarea{
-            block-size: 100px;
-        }
-    </style>
-</head>
-<body>
-    <h1>创建投票</h1>
-    <form action="/createvote" method="post">
-        投票名：<input type="text" name="name">
-        <br><br>
-        截止时间（年月日）：<input type="date" name="date">
-        <br><br>
-        截止时间（时间）：<input type="time" name="time">
-        <br><br>
-        介绍：<textarea name="introduce" rows="auto" cols="100"></textarea>
-        <br><br>
-        选项：<textarea name="option" rows="auto" cols="100"></textarea>
-        <p>以选项1 选项2的格式填写选项文本，示例A B表示第一个选项叫A，第二个选项叫B。</p>
-        提交：<input type="submit">
-    </form>
-</body>
+<!DOCTYPE html>  
+<html lang="zh-CN">  
+<head>  
+    <meta charset="UTF-8">  
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">  
+    <title>创建投票</title>  
+    <style>  
+        body {  
+            font-family: Arial, sans-serif;  
+            margin: 0;  
+            padding: 20px;  
+            background-color: #f4f4f4;  
+        }  
+        h1 {  
+            text-align: center;  
+            color: #333;  
+        }  
+        form {  
+            max-width: 600px;  
+            margin: 0 auto;  
+            background: #fff;  
+            padding: 20px;  
+            border-radius: 8px;  
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);  
+        }  
+        .form-group {  
+            margin-bottom: 15px;  
+        }  
+        .form-group label {  
+            display: block;  
+            margin-bottom: 5px;  
+        }  
+        .form-group input, .form-group textarea {  
+            width: 100%;  
+            padding: 8px;  
+            box-sizing: border-box;  
+        }  
+        textarea {  
+            height: 100px; /* 使用height代替block-size */  
+        }  
+        .form-group p {  
+            font-size: 0.9em;  
+            color: #666;  
+            margin-top: 5px;  
+        }  
+        .form-group input[type="submit"] {  
+            background-color: #4CAF50;  
+            color: white;  
+            padding: 10px 20px;  
+            border: none;  
+            border-radius: 4px;  
+            cursor: pointer;  
+        }  
+        .form-group input[type="submit"]:hover {  
+            background-color: #45a049;  
+        }  
+    </style>  
+</head>  
+<body>  
+    <h1>创建投票</h1>  
+    <form action="/createvote" method="post">  
+        <div class="form-group">  
+            <label for="name">投票名：</label>  
+            <input type="text" id="name" name="name" required>  
+        </div>  
+        <div class="form-group">  
+            <label for="date">截止时间（年月日）：</label>  
+            <input type="date" id="date" name="date" required>  
+        </div>  
+        <div class="form-group">  
+            <label for="time">截止时间（时间）：</label>  
+            <input type="time" id="time" name="time" required>  
+        </div>  
+        <div class="form-group">  
+            <label for="introduce">介绍：</label>  
+            <textarea id="introduce" name="introduce" rows="4" cols="100" required></textarea>  
+        </div>  
+        <div class="form-group">  
+            <label for="option">选项：</label>  
+            <textarea id="option" name="option" rows="4" cols="100" required></textarea>  
+            <p>以选项1 选项2的格式填写选项文本，示例A B表示第一个选项叫A，第二个选项叫B。</p>  
+        </div>  
+        <div class="form-group">  
+            <input type="submit" value="提交">  
+        </div>  
+    </form>  
+</body>  
 </html>

@@ -3,6 +3,7 @@ module nonamevote
 go 1.23
 
 require (
+	gitee.com/qiulaidongfeng/cachefs v0.7.0
 	github.com/gin-gonic/gin v1.10.0
 	github.com/maxmind/mmdbinspect v0.2.0
 	github.com/oschwald/maxminddb-golang v1.13.1

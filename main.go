@@ -7,6 +7,7 @@ import (
 	"crypto/rsa"
 	"crypto/sha256"
 	"image/png"
+	"io"
 	"nonamevote/internal/account"
 	"nonamevote/internal/vote"
 	"os"
@@ -14,6 +15,7 @@ import (
 	_ "time/tzdata"
 	"unsafe"
 
+	"gitee.com/qiulaidongfeng/cachefs"
 	"github.com/gin-gonic/gin"
 	"github.com/pquerna/otp"
 	"github.com/pquerna/otp/totp"
@@ -73,10 +75,10 @@ func Init() {
 
 	s.UseH2C = true
 	s.GET("/", func(ctx *gin.Context) {
-		ctx.File(index)
+		ctx.Data(200, "text/html", cacheFile("index.html"))
 	})
 	s.GET("/register", func(ctx *gin.Context) {
-		ctx.File(register)
+		ctx.Data(200, "text/html", cacheFile("register.html"))
 	})
 	s.POST("/register", func(ctx *gin.Context) {
 		name := ctx.PostForm("name")
@@ -103,7 +105,7 @@ func Init() {
 			ctx.String(401, "登录失败：%s", err.Error())
 			return
 		}
-		ctx.File(login)
+		ctx.Data(200, "text/html", cacheFile("login.html"))
 	})
 	s.POST("/login", func(ctx *gin.Context) {
 		//先考虑是否已经登录
@@ -151,7 +153,7 @@ func Init() {
 		ctx.String(200, "登录成功")
 	})
 	s.GET("/createvote", func(ctx *gin.Context) {
-		ctx.File(createvote)
+		ctx.Data(200, "text/html", cacheFile("createvote.html"))
 	})
 	s.POST("/createvote", func(ctx *gin.Context) {
 		//先检查是否已登录
@@ -181,6 +183,20 @@ func Init() {
 		ctx.SetCookie("session", "", -1, "", "", true, true)
 		ctx.String(200, "退出登录成功")
 	})
+}
+
+var hfs = cachefs.NewHttpCacheFs(html)
+
+func cacheFile(file string) []byte {
+	f, err := hfs.Open(file)
+	if err != nil {
+		panic(err)
+	}
+	b, err := io.ReadAll(f)
+	if err != nil {
+		panic(err)
+	}
+	return b
 }
 
 func initHttps() {

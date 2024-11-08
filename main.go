@@ -97,11 +97,13 @@ func Init() {
 			ctx.String(401, err.Error())
 			return
 		}
+		//在注册时直接就登录
+		addSession(ctx, user)
 		buf := genTotpImg(user)
 		data := cacheFile("register.html")
 		ctx.Writer.WriteHeader(200)
 		ctx.Writer.Write(data[:imgIndex])
-		ctx.Writer.WriteString("<img src=data:image/png;base64,")
+		ctx.Writer.WriteString("<p>注册成功</p><img src=data:image/png;base64,")
 		ctx.Writer.WriteString(base64.StdEncoding.EncodeToString(buf))
 		ctx.Writer.WriteString(">")
 		ctx.Writer.Write(data[imgIndex+5:])
@@ -153,18 +155,7 @@ func Init() {
 2. 所有的设备时间不一致`)
 			return
 		}
-		se := account.NewSession(ctx, name)
-		account.SessionDb.Add(se)
-		account.SessionDb.SaveToOS()
-		cookie := se.EnCode()
-		wc, err := rsa.EncryptOAEP(sha256.New(), rand.Reader, pubkey, unsafe.Slice(unsafe.StringData(cookie), len(cookie)), nil)
-		if err != nil {
-			panic(err)
-		}
-		ctx.SetCookie("session", unsafe.String(unsafe.SliceData(wc), len(wc)), account.SessionMaxAge, "", "", true, true)
-		user.Session[user.SessionIndex%3] = md5.Sum(unsafe.Slice(unsafe.StringData(se.Value), len(se.Value)))
-		user.SessionIndex++
-		account.ReplaceUser(user)
+		addSession(ctx, user)
 		ctx.String(200, "登录成功")
 	})
 	s.GET("/createvote", func(ctx *gin.Context) {
@@ -198,6 +189,20 @@ func Init() {
 		ctx.SetCookie("session", "", -1, "", "", true, true)
 		ctx.String(200, "退出登录成功")
 	})
+}
+
+func addSession(ctx *gin.Context, user account.User) {
+	se := account.NewSession(ctx, user.Name)
+	account.SessionDb.Add(se)
+	cookie := se.EnCode()
+	wc, err := rsa.EncryptOAEP(sha256.New(), rand.Reader, pubkey, unsafe.Slice(unsafe.StringData(cookie), len(cookie)), nil)
+	if err != nil {
+		panic(err)
+	}
+	ctx.SetCookie("session", unsafe.String(unsafe.SliceData(wc), len(wc)), account.SessionMaxAge, "", "", true, true)
+	user.Session[user.SessionIndex%3] = md5.Sum(unsafe.Slice(unsafe.StringData(se.Value), len(se.Value)))
+	user.SessionIndex++
+	account.ReplaceUser(user)
 }
 
 var hfs = cachefs.NewHttpCacheFs(html)

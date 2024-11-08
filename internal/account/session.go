@@ -38,7 +38,7 @@ type Session struct {
 
 func NewSession(ctx *gin.Context, Name string) Session {
 	s := Session{}
-	var b [256]byte
+	var b [32]byte
 	var err error
 	_, err = rand.Read(b[:])
 	if err != nil {

@@ -171,9 +171,9 @@ func getOS(ctx *gin.Context) string {
 
 var SessionDb = data.NewTable[Session]("./session")
 
-const SessionMaxAge = 1 * 60 * 60 //1小时
+const SessionMaxAge = 12 * 60 * 60 //12小时
 
-const sessionMaxAge = time.Hour * 1
+const sessionMaxAge = time.Hour * 12
 
 func init() {
 	SessionDb.LoadToOS()

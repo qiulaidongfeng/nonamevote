@@ -30,7 +30,7 @@ func NewUser(Name string) (User, error) {
 	key, err := totp.Generate(totp.GenerateOpts{
 		Issuer:      "无记名投票",
 		AccountName: Name,
-		SecretSize:  192,
+		SecretSize:  64,
 		Rand:        rand.Reader,
 	})
 	if err != nil {

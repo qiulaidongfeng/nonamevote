@@ -6,6 +6,7 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha256"
+	"encoding/base64"
 	"image/png"
 	"io"
 	"nonamevote/internal/account"
@@ -28,6 +29,8 @@ var index = filepath.Join(html, "index.html")
 var login = filepath.Join(html, "login.html")
 var createvote = filepath.Join(html, "createvote.html")
 
+var imgIndex = bytes.LastIndex(cacheFile("register.html"), []byte("<img>"))
+
 var (
 	cert []byte
 	key  []byte
@@ -46,7 +49,7 @@ func genTotpImg(user account.User) []byte {
 	if err != nil {
 		panic(err)
 	}
-	img, err := key.Image(800, 800)
+	img, err := key.Image(400, 400)
 	if err != nil {
 		panic(err)
 	}
@@ -59,6 +62,9 @@ func genTotpImg(user account.User) []byte {
 }
 
 func init() {
+	if imgIndex == -1 {
+		panic("应该有img在注册页")
+	}
 	Init()
 	// 创建投票网页
 	for _, v := range vote.Db.Data {
@@ -92,7 +98,13 @@ func Init() {
 			return
 		}
 		buf := genTotpImg(user)
-		ctx.Writer.Write(buf)
+		data := cacheFile("register.html")
+		ctx.Writer.WriteHeader(200)
+		ctx.Writer.Write(data[:imgIndex])
+		ctx.Writer.WriteString("<img src=data:image/png;base64,")
+		ctx.Writer.WriteString(base64.StdEncoding.EncodeToString(buf))
+		ctx.Writer.WriteString(">")
+		ctx.Writer.Write(data[imgIndex+5:])
 	})
 	s.GET("/login", func(ctx *gin.Context) {
 		//先考虑是否已经登录

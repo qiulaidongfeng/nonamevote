@@ -10,6 +10,8 @@ import (
 	"image/png"
 	"io"
 	"nonamevote/internal/account"
+	"nonamevote/internal/config"
+	"nonamevote/internal/data"
 	"nonamevote/internal/vote"
 	"os"
 	"path/filepath"
@@ -80,6 +82,17 @@ func Init() {
 	account.Privkey = privkey
 
 	s.UseH2C = true
+	s.Use(func(ctx *gin.Context) {
+		ip := ctx.RemoteIP()
+		count := data.IpCount.AddIpCount(ip)
+		expiration := config.GetExpiration()
+		maxcount := config.GetMaxCount()
+		if count > maxcount {
+			ctx.String(403, "%d秒内这个ip(%s)访问网站超过%d次，请等%d秒后再访问网站", expiration, ip, maxcount, expiration)
+			ctx.Abort()
+		}
+		ctx.Next()
+	})
 	s.GET("/", func(ctx *gin.Context) {
 		ctx.Data(200, "text/html", cacheFile("index.html"))
 	})

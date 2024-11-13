@@ -1,51 +1,68 @@
-<!DOCTYPE html>  
-<html lang="zh-CN">  
-<head>  
-    <meta charset="UTF-8">  
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">  
-    <title>所有投票</title>  
-    <style>  
-        body {  
-            font-family: Arial, sans-serif;  
-            margin: 0;  
-            padding: 20px;  
-        }  
-        h1 {  
-            text-align: center;  
-            margin-bottom: 20px;  
-        }  
-        .vote-container {  
-            display: flex;  
-            flex-wrap: wrap;  
-            justify-content: center;  
-        }  
-        .vote-item {  
-            flex: 1 1 calc(20% - 20px); /* Adjust the percentage and subtract margin/padding */  
-            margin: 10px;  
-            border: 1px solid black;  
-            padding: 10px;  
-            box-sizing: border-box; /* Ensure padding and border are included in the width */  
-            text-align: center;  
-        }  
-        .vote-item a {  
-            text-decoration: none;  
-            color: blue;  
-        }  
-        .vote-item a:hover {  
-            text-decoration: underline;  
-        }  
-    </style>  
-</head>  
-<body>  
-    <h1>所有投票</h1>  
-    <div class="vote-container">  
-        {{range $i, $v := getAllVote}}  
-            <div class="vote-item">  
-                {{$v.Name}}  
-                <br>  
-                <a href="{{$v.Path}}">进入</a>  
-            </div>  
-        {{end}}  
-    </div>  
-</body>  
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>所有投票</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #555;
+        }
+        .vote-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px; /* 使用gap属性来控制项目间的距离 */
+        }
+        .vote-item {
+            flex: 1 1 calc(20% - 20px);
+            margin: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px; /* 圆角边框 */
+            background-color: white;
+            padding: 15px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* 添加阴影效果 */
+            transition: transform 0.2s; /* 鼠标悬停时的动画效果 */
+            text-align: center;
+        }
+        .vote-item:hover {
+            transform: scale(1.05); /* 鼠标悬停时放大 */
+        }
+        .vote-item a {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 5px 10px;
+            background-color: #007BFF;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        .vote-item a:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h1>所有投票</h1>
+    <div class="vote-container">
+        {{range $i, $v := getAllVote}}
+            <div class="vote-item">
+                <strong>{{$v.Name}}</strong>
+                <br>
+                <a href="{{$v.Path}}">进入</a>
+            </div>
+        {{end}}
+    </div>
+</body>
 </html>

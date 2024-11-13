@@ -70,7 +70,7 @@ func (s *Session) Check(ctx *gin.Context, cookie *http.Cookie, i int) (bool, err
 	if s.CreateTime.Sub(time.Now()) >= sessionMaxAge {
 		return false, errors.New("登录已失效，请重新登录")
 	}
-	//如果是测试或创建session时没有获得ip对应的国家，就不要检查ip对于的国家是否一致
+	//如果是测试或创建session时没有获得ip对应的地区，就不要检查ip对于的地区是否一致
 	if !Test && s.Ip.Country != "" {
 		userIp, err := getIPInfo(ctx.ClientIP())
 		if err != nil {
@@ -78,7 +78,7 @@ func (s *Session) Check(ctx *gin.Context, cookie *http.Cookie, i int) (bool, err
 		}
 		if userIp != s.Ip && s.Ip.Country != "" && userIp.Country != "" {
 			SessionDb.DeleteIndex(i)
-			return false, errors.New("IP地址在两次登录时不在同一个国家，请重新登录")
+			return false, errors.New("IP地址在两次登录时不在同一个地区，请重新登录")
 		}
 	}
 	useros := getOS(ctx)

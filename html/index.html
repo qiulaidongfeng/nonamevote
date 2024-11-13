@@ -15,30 +15,44 @@
             justify-content: center;  
             height: 100vh;  
             background-color: #f0f0f0;  
-        }  
-        nav a {  
-            text-decoration: none;  
-            color: #333;  
-            margin: 10px 0;  
-            padding: 10px 20px;  
-            background-color: #fff;  
-            border-radius: 5px;  
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);  
-            transition: background-color 0.3s;  
-        }  
-        nav a:hover {  
-            background-color: #ddd;  
-        }  
+        }
+        nav {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .nav-button {  
+            display: inline-block;
+            text-decoration: none;
+            color: #fff;
+            margin: 10px;
+            padding: 15px 30px;
+            background-color: #2382db;
+            border-radius: 5px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            transition: background-color 0.3s, transform 0.2s;
+            font-size: 16px;
+        }
+        .nav-button:hover {  
+            background-color: #2382db;
+            transform: translateY(-4px);
+        }
+        /* 添加说明文字的样式 */
+        .todo-note {
+            margin-top: 20px;
+            font-size: 14px;
+            color: #666;
+        }
     </style>  
 </head>  
 <body>
     <h1>无记名投票</h1>
     <nav>  
-        <a href="/register" aria-label="注册页面"><h3>注册</h3></a>  
-        <a href="/login" aria-label="登录页面"><h3>登录</h3></a>  
-        <a href="/createvote" aria-label="创建投票页面"><h3>创建投票</h3></a>  
-        <a href="/allvote" aria-label="所有投票页面"><h3>所有投票</h3></a>  
-        <a href="/exit" aria-label="退出登录"><h3>退出登录</h3></a>  
-    </nav>  
+        <a href="/register" class="nav-button" aria-label="注册页面">注册</a>  
+        <a href="/login" class="nav-button" aria-label="登录页面">登录</a>  
+        <a href="/createvote" class="nav-button" aria-label="创建投票页面">创建投票</a>  
+        <a href="/allvote" class="nav-button" aria-label="所有投票页面">所有投票</a>  
+        <a href="/exit" class="nav-button" aria-label="退出登录">退出登录</a>  
+    </nav>
+    <p class="todo-note">未登录用户只能查看已存在的投票</p>
 </body>  
 </html>

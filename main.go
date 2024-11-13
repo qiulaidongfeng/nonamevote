@@ -172,6 +172,16 @@ func Init() {
 		ctx.String(200, "登录成功")
 	})
 	s.GET("/createvote", func(ctx *gin.Context) {
+		//先检查是否已登录
+		ok, err, _ := account.CheckLogined(ctx)
+		if !ok {
+			if err != nil {
+				ctx.String(401, "登录失败：%s", err.Error())
+				return
+			}
+			ctx.String(401, "已登录用户才能创建投票")
+			return
+		}
 		ctx.Data(200, "text/html", cacheFile("createvote.html"))
 	})
 	s.POST("/createvote", func(ctx *gin.Context) {

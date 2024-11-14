@@ -1,41 +1,92 @@
-<!DOCTYPE html>  
-<html lang="zh-CN">  
-<head>  
-    <meta charset="UTF-8">  
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">  
-    <title>{{.Name}}</title>  
-    <style>  
-        body {  
-            font-family: Arial, sans-serif;  
-            text-align: center;  
-            margin: 0;  
-            padding: 20px;  
-        }  
-        h1 {  
-            margin-bottom: 20px;  
-        }  
-        form {  
-            margin-top: 20px;  
-        }  
-    </style>  
-</head>  
-<body>  
-    <h1>无记名投票</h1>  
-    <p>投票名: {{.Name}} &nbsp;&nbsp;&nbsp;&nbsp; 截止时间: {{.End}}</p>  
-    <pre>{{.Introduce}}</pre>  
-    <form action="{{.Path}}" method="post">  
-        {{$logined := .Logined}}  
-        {{range $index, $option := getOption .Name}}  
-            <div>  
-                选项 {{$option.Name}}: 得票数: {{$option.GotNum}}  
-                {{if $logined}}  
-                    <input type="radio" name="k" value="{{$index}}"> 选投  
-                {{end}}  
-            </div>  
-        {{end}}  
-        {{if $logined}}  
-            <button type="submit">提交</button>  
-        {{end}}  
-    </form>  
-</body>  
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{.Name}}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        p {
+            color: #666;
+            font-size: 1.2em;
+        }
+        form {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .option-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .option-div {
+            margin: 5px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+        }
+        .option-label {
+            margin-left: 10px;
+            cursor: pointer;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin-top: 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <h1>无记名投票</h1>
+    <p>投票名: {{.Name}} &nbsp;&nbsp;&nbsp;&nbsp; 截止时间: {{.End}}</p>
+    <pre>{{.Introduce}}</pre>
+    <form action="{{.Path}}" method="post">
+        {{$logined := .Logined}}
+        <div class="option-container">
+            {{range $index, $option := getOption .Name}}
+                <div class="option-div">
+                    <span>选项 {{$option.Name}}: 得票数: {{$option.GotNum}}</span>
+                    {{if $logined}}
+                        <label class="option-label">
+                            <input type="radio" name="k" value="{{$index}}"> 选投
+                        </label>
+                    {{end}}
+                </div>
+            {{end}}
+        </div>
+        {{if $logined}}
+            <button type="submit">提交</button>
+        {{end}}
+    </form>
+</body>
 </html>

@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="zh-CN">  
+<head>
+    <meta charset="UTF-8">
+    <title>显示totp二维码</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        p, ol {
+            max-width: 800px;
+            margin: auto;
+        }
+        ol {
+            list-style-type: decimal;
+            padding-left: 20px;
+        }
+        li {
+            margin-bottom: 10px;
+        }
+        a {
+            color: #007BFF;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        img {
+            display: block;
+            max-width: 100%;
+            height: auto;
+            margin: auto;
+        }
+    </style>
+</head>
+<body>
+    <p>如果您需要重新保存totp密钥，可以使用totp软件，扫描这个二维码</p>
+    <p>以下是一些可以扫描二维码保存TOTP密钥的软件：</p>  
+    <ol>  
+        <li>Microsoft Authenticator</li>  
+        <li>Google Authenticator</li>  
+        <li><a href="https://stratumauth.com" target="_blank">AuthenticatorPro</a></li>  
+    </ol>
+    <img> <!--图像由服务器动态生成，并在响应客户端网页时改写这一部分-->
+</body>
+</html>

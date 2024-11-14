@@ -32,6 +32,7 @@ var login = filepath.Join(html, "login.html")
 var createvote = filepath.Join(html, "createvote.html")
 
 var imgIndex = bytes.LastIndex(cacheFile("register.html"), []byte("<img>"))
+var imgIndex2 = bytes.LastIndex(cacheFile("showQRCode.html"), []byte("<img>"))
 
 var (
 	cert []byte
@@ -66,6 +67,9 @@ func genTotpImg(user account.User) []byte {
 func init() {
 	if imgIndex == -1 {
 		panic("应该有img在注册页")
+	}
+	if imgIndex2 == -1 {
+		panic("应该有img在显示totp页")
 	}
 	Init()
 	// 创建投票网页
@@ -211,6 +215,31 @@ func Init() {
 		}
 		ctx.SetCookie("session", "", -1, "", "", true, true)
 		ctx.String(200, "退出登录成功")
+	})
+	s.GET("/showQRCode", func(ctx *gin.Context) {
+		//先检查是否已登录
+		ok, err, se := account.CheckLogined(ctx)
+		if !ok {
+			if err != nil {
+				ctx.String(401, "登录失败：%s", err.Error())
+				return
+			}
+			ctx.String(401, "您未登录")
+			return
+		}
+		user := account.GetUser(se.Name)
+		if user.Name == "" {
+			ctx.String(401, "没有这个用户")
+			return
+		}
+		buf := genTotpImg(user)
+		data := cacheFile("showQRCode.html")
+		ctx.Writer.WriteHeader(200)
+		ctx.Writer.Write(data[:imgIndex2])
+		ctx.Writer.WriteString("<img src=data:image/png;base64,")
+		ctx.Writer.WriteString(base64.StdEncoding.EncodeToString(buf))
+		ctx.Writer.WriteString(">")
+		ctx.Writer.Write(data[imgIndex2+5:])
 	})
 }
 

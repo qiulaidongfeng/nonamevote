@@ -6,6 +6,7 @@ require (
 	gitee.com/qiulaidongfeng/cachefs v0.7.0
 	github.com/fsnotify/fsnotify v1.8.0
 	github.com/gin-gonic/gin v1.10.0
+	github.com/gorilla/feeds v1.2.0
 	github.com/maxmind/mmdbinspect v0.2.0
 	github.com/oschwald/maxminddb-golang v1.13.1
 	github.com/pquerna/otp v1.4.0
@@ -46,7 +47,6 @@ require (
 	github.com/subosito/gotenv v1.6.0 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.2.12 // indirect
-	go.uber.org/atomic v1.11.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/arch v0.12.0 // indirect
 	golang.org/x/crypto v0.29.0 // indirect

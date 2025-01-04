@@ -36,3 +36,7 @@ func GetExpiration() int {
 func GetMaxCount() int64 {
 	return v.GetInt64("redis.maxcount")
 }
+
+func GetLink() string {
+	return v.GetString("link.path")
+}

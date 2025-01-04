@@ -12,6 +12,7 @@ import (
 	"nonamevote/internal/account"
 	"nonamevote/internal/config"
 	"nonamevote/internal/data"
+	"nonamevote/internal/rss"
 	"nonamevote/internal/vote"
 	"os"
 	"path/filepath"
@@ -240,6 +241,9 @@ func Init() {
 		ctx.Writer.WriteString(base64.StdEncoding.EncodeToString(buf))
 		ctx.Writer.WriteString(">")
 		ctx.Writer.Write(data[imgIndex2+5:])
+	})
+	s.GET("/rss.xml", func(ctx *gin.Context) {
+		ctx.Writer.WriteString(rss.Generate())
 	})
 }
 

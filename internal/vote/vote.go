@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"nonamevote/internal/account"
 	"nonamevote/internal/data"
+	"nonamevote/internal/run"
 	"os"
 	"path/filepath"
 	"slices"
@@ -130,15 +131,9 @@ var addvotelock sync.Mutex
 
 func init() {
 	Db.LoadToOS()
-	go func() {
-		for {
-			// 每10秒保存一次数据库
-			select {
-			case <-time.Tick(10 * time.Second):
-				Db.SaveToOS()
-			}
-		}
-	}()
+	Db.Changed = run.Ticker(func() (changed bool) {
+		return Db.SaveToOS()
+	})
 }
 
 func AddVoteHtml(v *Info) {

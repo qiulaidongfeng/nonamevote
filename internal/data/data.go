@@ -5,11 +5,14 @@ import (
 	"os"
 	"slices"
 	"sync"
+	"sync/atomic"
 )
 
 type Table[T any] struct {
-	t    table[T]
-	lock sync.RWMutex
+	t       table[T]
+	lock    sync.RWMutex
+	changed atomic.Bool
+	Changed func()
 }
 
 type table[T any] struct {
@@ -20,6 +23,7 @@ type table[T any] struct {
 func NewTable[T any](path string) *Table[T] {
 	t := Table[T]{}
 	t.t.Path = path
+	t.Changed = func() {}
 	return &t
 }
 
@@ -44,7 +48,7 @@ func (t *Table[T]) LoadToOS() {
 	}
 }
 
-func (t *Table[T]) SaveToOS() {
+func (t *Table[T]) SaveToOS() (changed bool) {
 	if Test {
 		return
 	}
@@ -63,9 +67,12 @@ func (t *Table[T]) SaveToOS() {
 	if err != nil {
 		panic(err)
 	}
+	return t.changed.Load()
 }
 
 func (t *Table[T]) Add(v T) int {
+	t.changed.Store(true)
+	t.Changed()
 	t.lock.Lock()
 	defer t.lock.Unlock()
 	t.t.Data = append(t.t.Data, v)
@@ -73,6 +80,8 @@ func (t *Table[T]) Add(v T) int {
 }
 
 func (t *Table[T]) Data(yield func(int, T) bool) {
+	t.changed.Store(true)
+	t.Changed()
 	i := 0
 	for {
 		t.lock.Lock()
@@ -94,6 +103,8 @@ func (t *Table[T]) Replace(new T, ok func(T) bool) {
 	defer t.lock.Unlock()
 	for i, v := range t.t.Data {
 		if ok(v) {
+			t.changed.Store(true)
+			t.Changed()
 			t.t.Data[i] = new
 			break
 		}
@@ -106,12 +117,16 @@ func (t *Table[T]) Delete(delete func(T) bool) {
 	for i := 0; i < len(t.t.Data); i++ {
 		v := t.t.Data[i]
 		if delete(v) {
+			t.changed.Store(true)
+			t.Changed()
 			t.t.Data = slices.Delete(t.t.Data, i, i+1)
 		}
 	}
 }
 
 func (t *Table[T]) DeleteIndex(i int) {
+	t.changed.Store(true)
+	t.Changed()
 	t.lock.Lock()
 	defer t.lock.Unlock()
 	t.t.Data = slices.Delete(t.t.Data, i, i+1)

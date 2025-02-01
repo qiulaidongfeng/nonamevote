@@ -8,9 +8,11 @@ import (
 )
 
 type MapTable[T any] struct {
-	t    maptable[T]
-	key  func(T) string
-	lock sync.Mutex
+	t       maptable[T]
+	key     func(T) string
+	lock    sync.Mutex
+	changed atomic.Bool
+	Changed func()
 }
 
 type maptable[T any] struct {
@@ -22,6 +24,7 @@ type maptable[T any] struct {
 func NewMapTable[T any](path string, key func(T) string) *MapTable[T] {
 	t := MapTable[T]{key: key}
 	t.t.Path = path
+	t.Changed = func() {}
 	return &t
 }
 
@@ -55,7 +58,7 @@ func (t *MapTable[T]) LoadToOS() {
 	atomic.StoreInt64(&t.t.i, d.I)
 }
 
-func (t *MapTable[T]) SaveToOS() {
+func (t *MapTable[T]) SaveToOS() (changed bool) {
 	if Test {
 		return
 	}
@@ -85,13 +88,16 @@ func (t *MapTable[T]) SaveToOS() {
 	if err != nil {
 		panic(err)
 	}
+	return t.changed.Load()
 }
 
 func (t *MapTable[T]) Add(v T) (int, func()) {
-	return int(atomic.AddInt64(&t.t.i, 1)), func() { t.t.M.Store(t.key(v), v) }
+	return int(atomic.AddInt64(&t.t.i, 1)), func() { t.t.M.Store(t.key(v), v); t.changed.Store(true); t.Changed() }
 }
 
 func (t *MapTable[T]) Data(yield func(string, T) bool) {
+	//Note:如果Data的调用者会修改值，增加
+	//	t.changed.Store(true)
 	t.t.M.Range(func(key, value any) bool {
 		k := key.(string)
 		v := value.(T)

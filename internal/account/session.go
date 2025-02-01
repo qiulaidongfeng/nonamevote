@@ -15,6 +15,7 @@ import (
 	"net/url"
 	"nonamevote/internal/codec"
 	"nonamevote/internal/data"
+	"nonamevote/internal/run"
 	"os"
 	"slices"
 	"strings"
@@ -183,19 +184,17 @@ func init() {
 		diff := now.Sub(s.CreateTime)
 		return diff > sessionMaxAge
 	})
-	SessionDb.SaveToOS()
+	SessionDb.Changed = run.Ticker(func() (changed bool) {
+		return SessionDb.SaveToOS()
+	})
 	go func() {
 		for {
-			//每60秒保存一次session数据库，每经过一次session最大有效时间，检查一次所有session，有过期的删除。
-			select {
-			case <-time.Tick(60 * time.Second):
-				SessionDb.SaveToOS()
-			case <-time.Tick(sessionMaxAge):
-				for i, v := range SessionDb.Data {
-					diff := now.Sub(v.CreateTime)
-					if diff > sessionMaxAge {
-						SessionDb.DeleteIndex(i)
-					}
+			//每经过一次session最大有效时间，检查一次所有session，有过期的删除。
+			<-time.Tick(sessionMaxAge)
+			for i, v := range SessionDb.Data {
+				diff := now.Sub(v.CreateTime)
+				if diff > sessionMaxAge {
+					SessionDb.DeleteIndex(i)
 				}
 			}
 		}

@@ -2,19 +2,24 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"crypto/md5"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha256"
 	"encoding/base64"
+	"fmt"
 	"image/png"
 	"io"
+	"log/slog"
+	"net/http"
 	"nonamevote/internal/account"
 	"nonamevote/internal/config"
 	"nonamevote/internal/data"
 	"nonamevote/internal/rss"
 	"nonamevote/internal/vote"
 	"os"
+	"os/signal"
 	"path/filepath"
 	_ "time/tzdata"
 	"unsafe"
@@ -42,8 +47,25 @@ var (
 )
 
 func main() {
-	err := s.RunTLS(":443", "./cert.pem", "./key.pem")
-	if err != nil {
+	srv := &http.Server{
+		Addr:    ":443",
+		Handler: s.Handler(),
+	}
+	go func() {
+		c := make(chan os.Signal)
+		signal.Notify(c, os.Interrupt)
+		<-c
+		fmt.Println("正在关机")
+		err := srv.Shutdown(context.Background())
+		if err != nil {
+			slog.Error("", "err", err)
+		}
+		account.SessionDb.SaveToOS()
+		account.UserDb.SaveToOS()
+		vote.Db.SaveToOS()
+	}()
+	err := srv.ListenAndServeTLS("./cert.pem", "./key.pem")
+	if err != nil && err != http.ErrServerClosed {
 		panic(err)
 	}
 }

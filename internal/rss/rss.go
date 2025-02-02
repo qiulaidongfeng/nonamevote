@@ -19,11 +19,19 @@ func Generate() string {
 	}
 	for _, v := range vote.Db.Data {
 		var buf strings.Builder
+		buf.WriteString("描述：")
+		buf.WriteString(v.Introduce)
+		buf.WriteString("\n")
 		for _, o := range v.Option {
 			buf.WriteString("选项")
 			buf.WriteString(o.Name)
 			buf.WriteString("得票")
 			buf.WriteString(strconv.Itoa(o.GotNum))
+			buf.WriteString("\n")
+		}
+		for _, c := range v.Comment {
+			buf.WriteString("评论：")
+			buf.WriteString(c)
 			buf.WriteString("\n")
 		}
 		feed.Items = append(feed.Items, &feeds.Item{

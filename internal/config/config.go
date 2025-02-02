@@ -2,17 +2,21 @@ package config
 
 import (
 	"fmt"
+	"sync/atomic"
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/viper"
 )
 
-var v = func() *viper.Viper {
+var v *viper.Viper
+
+func newv() *viper.Viper {
 	v := viper.New()
 	v.SetConfigFile("config.ini")
 	v.AddConfigPath("./")
 
 	v.OnConfigChange(func(e fsnotify.Event) {
+		loadConfig()
 		fmt.Println("Config file changed:", e.Name)
 	})
 	v.WatchConfig()
@@ -21,22 +25,45 @@ var v = func() *viper.Viper {
 		panic(err)
 	}
 	return v
-}()
+}
+
+var config = struct {
+	host, port           atomic.Pointer[string]
+	expiration, maxcount atomic.Int64
+	link                 atomic.Pointer[string]
+}{}
+
+func loadConfig() {
+	config.host.Store(ptr(v.GetString("redis.host")))
+	config.port.Store(ptr(v.GetString("redis.port")))
+	config.expiration.Store(int64(v.GetInt("redis.expiration")))
+	config.maxcount.Store(v.GetInt64("redis.maxcount"))
+	config.link.Store(ptr(v.GetString("link.path")))
+}
+
+func ptr(v string) *string {
+	return &v
+}
+
+func init() {
+	v = newv()
+	loadConfig()
+}
 
 func GetRedis() (host string, port string) {
-	host = v.GetString("redis.host")
-	port = v.GetString("redis.port")
+	host = *config.host.Load()
+	port = *config.port.Load()
 	return
 }
 
 func GetExpiration() int {
-	return v.GetInt("redis.expiration")
+	return int(config.expiration.Load())
 }
 
 func GetMaxCount() int64 {
-	return v.GetInt64("redis.maxcount")
+	return config.maxcount.Load()
 }
 
 func GetLink() string {
-	return v.GetString("link.path")
+	return *config.link.Load()
 }

@@ -2,6 +2,7 @@ package vote
 
 import (
 	"errors"
+	"fmt"
 	"html/template"
 	"log/slog"
 	"nonamevote/internal/account"
@@ -25,6 +26,7 @@ type Info struct {
 	Introduce string
 	Path      string
 	Option    []Option
+	Comment   []string
 	lock      sync.Mutex
 }
 
@@ -173,6 +175,51 @@ func AddVoteHtml(v *Info) {
 			ctx.String(401, "需要登录才能投票")
 			return
 		}
+
+		//处理新增评论
+		if ok := ctx.Query("comment"); ok != "" {
+			comment := ctx.PostForm("commentValue")
+			if comment == "" {
+				ctx.String(401, "评论不能为空")
+				return
+			}
+			dv := Db.Find(v.Path)
+			dv.lock.Lock()
+			dv.Comment = append(dv.Comment, comment)
+			dv.lock.Unlock()
+
+			ret := `
+			<!DOCTYPE html>
+			<html lang="zh-CN">
+				<head>
+					<meta charset="UTF-8">
+					<style>
+						#message {
+							font-size: 20px;
+							margin-top: 20px;
+						}
+					</style>
+				</head>
+				<body>
+					<div id="message">评论成功，5秒后返回</div>
+				</body>
+				<script>
+					function ret() {
+						// 设置一个5秒后的定时器来跳转
+						setTimeout(function() {
+							// 跳转到指定路径
+							window.location.href = "%s";
+						}, 5000); // 5秒后执行
+					}
+					ret();
+    			</script>
+			</html>
+			`
+			ret = fmt.Sprintf(ret, strings.Join([]string{"https://", ctx.Request.Host, ctx.Request.URL.Path}, ""))
+			ctx.Data(200, "text/html", unsafe.Slice(unsafe.StringData(ret), len(ret)))
+			return
+		}
+
 		user := account.GetUser(se.Name)
 		if slices.Contains(user.VotedPath, v.Path) {
 			ctx.String(401, "投票失败：因为已经投过票了")
@@ -215,6 +262,14 @@ var votetmpl = func() *template.Template {
 				v.lock.Unlock()
 			}
 			panic("未知的投票")
+		},
+		"getComment": func(path string) []string {
+			info := Db.Find(path)
+			if info == nil {
+				slog.Info("不存在的投票", "path", path)
+				return nil
+			}
+			return info.Comment
 		}}
 	t.Funcs(m)
 	file, err := os.ReadFile(filepath.Join(tmpl, "vote.temp"))

@@ -107,5 +107,6 @@ func (t *MapTable[T]) Data(yield func(string, T) bool) {
 
 func (t *MapTable[T]) Find(k string) T {
 	v, _ := t.t.M.Load(k)
-	return v.(T)
+	r, _ := v.(T)
+	return r
 }

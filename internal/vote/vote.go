@@ -184,6 +184,7 @@ func AddVoteHtml(v *Info) {
 				return
 			}
 			dv := Db.Find(v.Path)
+			Db.Changed()
 			dv.lock.Lock()
 			dv.Comment = append(dv.Comment, comment)
 			dv.lock.Unlock()
@@ -238,6 +239,7 @@ func AddVoteHtml(v *Info) {
 			ctx.String(401, "投票失败")
 			return
 		}
+		Db.Changed()
 		dv.Option[opt].GotNum++
 		user.VotedPath = append(user.VotedPath, v.Path)
 		account.ReplaceUser(user)

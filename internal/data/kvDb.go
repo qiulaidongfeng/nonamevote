@@ -25,6 +25,9 @@ func newKVDB(host string, port string) KVDB {
 }
 
 func (k *KVDB) AddIpCount(ip string) int64 {
+	if Test {
+		return 0
+	}
 	i, err := k.rdb.Incr(context.Background(), ip).Result()
 	if i == 1 {
 		err = k.rdb.Expire(context.Background(), ip, time.Duration(config.GetExpiration())*time.Second).Err()

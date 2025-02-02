@@ -8,7 +8,7 @@ import (
 // Ticker 间隔一定时间执行f
 // 默认间隔1分钟执行1次
 // 如果返回false,表示执行f没有变化
-// 将按间隔10分钟，100分钟，1000分钟，1天顺序延迟间隔直至1天执行一次f
+// 将按间隔365天执行1次f
 // 除非change被调用，将恢复间隔至1分钟
 func Ticker(f func() (changed bool)) (change func()) {
 	interval := 1 * time.Minute
@@ -19,7 +19,7 @@ func Ticker(f func() (changed bool)) (change func()) {
 			t := time.AfterFunc(interval, func() {
 				c := f()
 				if !c {
-					interval = min(interval*10, 24*time.Hour)
+					interval = 24 * time.Hour * 365
 					send.Store(true)
 				} else {
 					interval = 1 * time.Minute

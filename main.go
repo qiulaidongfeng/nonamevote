@@ -21,6 +21,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strings"
 	_ "time/tzdata"
 	"unsafe"
 
@@ -63,6 +64,7 @@ func main() {
 		account.SessionDb.SaveToOS()
 		account.UserDb.SaveToOS()
 		vote.Db.SaveToOS()
+		vote.NameDb.SaveToOS()
 	}()
 	err := srv.ListenAndServeTLS("./cert.pem", "./key.pem")
 	if err != nil && err != http.ErrServerClosed {
@@ -266,6 +268,39 @@ func Init() {
 	})
 	s.GET("/rss.xml", func(ctx *gin.Context) {
 		ctx.Writer.WriteString(rss.Generate())
+	})
+	s.GET("/search", func(ctx *gin.Context) {
+		ctx.Data(200, "text/html", cacheFile("search.html"))
+	})
+	s.POST("/search", func(ctx *gin.Context) {
+		s := ctx.PostForm("search")
+		v := vote.NameDb.Find(s)
+		if v == nil {
+			ctx.String(404, "查询的投票不存在")
+			return
+		}
+		ret := `
+			<!DOCTYPE html>
+				<head>
+					<meta charset="UTF-8">
+				</head>
+				<body>
+				</body>
+				<script>
+					function f() {
+						window.location.href = "%s";
+					}
+					f();
+    			</script>
+			</html>
+			`
+		//TODO:支持查询有同名的投票
+		v.Lock.Lock()
+		//Note:添加进数据库的，v.Path[0]肯定有值
+		path := v.Path[0]
+		v.Lock.Unlock()
+		ret = fmt.Sprintf(ret, strings.Join([]string{"https://", ctx.Request.Host, path}, ""))
+		ctx.Data(200, "text/html", unsafe.Slice(unsafe.StringData(ret), len(ret)))
 	})
 }
 

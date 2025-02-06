@@ -111,10 +111,22 @@ func ParserCreateVote(ctx *gin.Context) (*Info, error) {
 	path := "/vote/" + strconv.Itoa(len)
 	ret.Path = path
 	add()
+
+	n := NameDb.Find(ret.Name)
+	if n == nil {
+		//TODO:修复这里的竞态条件
+		//如果有两个同名投票，同时执行到这里，只用一个会被记录
+		n = new(NameAndPath)
+		n.VoteName = ret.Name
+		n.Path = append(n.Path, path)
+		_, add = NameDb.Add(n)
+		add()
+	} else {
+		n.Lock.Lock()
+		n.Path = append(n.Path, path)
+		n.Lock.Unlock()
+	}
 	AddVoteHtml(ret)
-
-	Db.SaveToOS()
-
 	return ret, nil
 }
 
@@ -127,14 +139,25 @@ var loc = func() *time.Location {
 	return loc
 }()
 
+type NameAndPath struct {
+	VoteName string
+	Path     []string
+	Lock     sync.Mutex `json:"-"`
+}
+
 var Db = data.NewMapTable[*Info]("./vote", func(i *Info) string { return i.Path })
+var NameDb = data.NewMapTable("./votename", func(n *NameAndPath) string { return n.VoteName })
 
 var addvotelock sync.Mutex
 
 func init() {
 	Db.LoadToOS()
+	NameDb.LoadToOS()
 	Db.Changed = run.Ticker(func() (changed bool) {
 		return Db.SaveToOS()
+	})
+	NameDb.Changed = run.Ticker(func() (changed bool) {
+		return NameDb.SaveToOS()
 	})
 }
 

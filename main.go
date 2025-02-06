@@ -52,8 +52,9 @@ func main() {
 		Addr:    ":443",
 		Handler: s.Handler(),
 	}
+	end := make(chan struct{})
 	go func() {
-		c := make(chan os.Signal)
+		c := make(chan os.Signal, 1)
 		signal.Notify(c, os.Interrupt)
 		<-c
 		fmt.Println("正在关机")
@@ -65,11 +66,14 @@ func main() {
 		account.UserDb.SaveToOS()
 		vote.Db.SaveToOS()
 		vote.NameDb.SaveToOS()
+		close(end)
+		fmt.Println("关机完成")
 	}()
 	err := srv.ListenAndServeTLS("./cert.pem", "./key.pem")
 	if err != nil && err != http.ErrServerClosed {
 		panic(err)
 	}
+	<-end
 }
 
 func genTotpImg(user account.User) []byte {

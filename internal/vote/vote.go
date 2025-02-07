@@ -114,12 +114,10 @@ func ParserCreateVote(ctx *gin.Context) (*Info, error) {
 	n := NameDb.Find(ret.Name)
 	if n == nil {
 		//TODO:修复这里的竞态条件
-		//如果有两个同名投票，同时执行到这里，只用一个会被记录
+		//如果有两个同名投票，同时执行到这里，只有一个会被记录
 		n = new(NameAndPath)
-		n.VoteName = ret.Name
 		n.Path = append(n.Path, path)
-		_, add = NameDb.Add(n)
-		add()
+		NameDb.AddKV(ret.Name, n)
 	} else {
 		n.Lock.Lock()
 		n.Path = append(n.Path, path)
@@ -138,13 +136,12 @@ var loc = func() *time.Location {
 }()
 
 type NameAndPath struct {
-	VoteName string
-	Path     []string
-	Lock     sync.Mutex `json:"-"`
+	Path []string
+	Lock sync.Mutex `json:"-"`
 }
 
 var Db = data.NewMapTable[*Info]("./vote", func(i *Info) string { return i.Path })
-var NameDb = data.NewMapTable("./votename", func(n *NameAndPath) string { return n.VoteName })
+var NameDb = data.NewMapTable[*NameAndPath]("./votename", nil)
 
 func Init() {
 	Db.LoadToOS()

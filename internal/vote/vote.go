@@ -126,7 +126,6 @@ func ParserCreateVote(ctx *gin.Context) (*Info, error) {
 		n.Path = append(n.Path, path)
 		n.Lock.Unlock()
 	}
-	AddVoteHtml(ret)
 	return ret, nil
 }
 
@@ -148,9 +147,7 @@ type NameAndPath struct {
 var Db = data.NewMapTable[*Info]("./vote", func(i *Info) string { return i.Path })
 var NameDb = data.NewMapTable("./votename", func(n *NameAndPath) string { return n.VoteName })
 
-var addvotelock sync.Mutex
-
-func init() {
+func Init() {
 	Db.LoadToOS()
 	NameDb.LoadToOS()
 	Db.Changed = run.Ticker(func() (changed bool) {
@@ -159,35 +156,36 @@ func init() {
 	NameDb.Changed = run.Ticker(func() (changed bool) {
 		return NameDb.SaveToOS()
 	})
-}
 
-func AddVoteHtml(v *Info) {
-	addvotelock.Lock()
-	defer addvotelock.Unlock()
-	S.GET(v.Path, func(ctx *gin.Context) {
-		//先检查是否登录
+	S.GET("/vote/:num", func(ctx *gin.Context) {
+		// 先检查是否登录
 		logined, err, _ := account.CheckLogined(ctx)
 		if err != nil {
 			ctx.String(401, err.Error())
 			return
 		}
-		//根据是否登录决定能看到的网页，不登录不能投票
+		// 根据是否登录决定能看到的网页，不登录不能投票
 		type gen struct {
 			*Info
 			Logined bool
 		}
-		ret := Db.Find(v.Path)
+		v := Db.Find(ctx.Request.URL.Path)
+		if v == nil {
+			ctx.String(404, "不存在的投票")
+			return
+		}
 		var b strings.Builder
-		err = votetmpl.Execute(&b, gen{Info: ret, Logined: logined})
+		err = votetmpl.Execute(&b, gen{Info: v, Logined: logined})
 		if err != nil {
 			slog.Error("", "err", err)
 			ctx.String(500, "internal server error")
 			return
 		}
-		ctx.Header("Content-Type", "text/html; charset=utf-8")
-		ctx.String(200, b.String())
+		ret := b.String()
+		ctx.Data(200, "text/html", unsafe.Slice(unsafe.StringData(ret), len(ret)))
 	})
-	S.POST(v.Path, func(ctx *gin.Context) {
+
+	S.POST("/vote/:num", func(ctx *gin.Context) {
 		//先检查是否登录
 		ok, err, se := account.CheckLogined(ctx)
 		if err != nil {
@@ -198,6 +196,7 @@ func AddVoteHtml(v *Info) {
 			ctx.String(401, "需要登录才能投票")
 			return
 		}
+		path := ctx.Request.URL.Path
 
 		//处理新增评论
 		if ok := ctx.Query("comment"); ok != "" {
@@ -206,11 +205,15 @@ func AddVoteHtml(v *Info) {
 				ctx.String(401, "评论不能为空")
 				return
 			}
-			dv := Db.Find(v.Path)
+			v := Db.Find(path)
+			if v == nil {
+				ctx.String(404, "不存在的投票")
+				return
+			}
 			Db.Changed()
-			dv.lock.Lock()
-			dv.Comment = append(dv.Comment, comment)
-			dv.lock.Unlock()
+			v.lock.Lock()
+			v.Comment = append(v.Comment, comment)
+			v.lock.Unlock()
 
 			ret := `
 			<!DOCTYPE html>
@@ -239,31 +242,35 @@ func AddVoteHtml(v *Info) {
     			</script>
 			</html>
 			`
-			ret = fmt.Sprintf(ret, strings.Join([]string{"https://", ctx.Request.Host, ctx.Request.URL.Path}, ""))
+			ret = fmt.Sprintf(ret, strings.Join([]string{"https://", ctx.Request.Host, path}, ""))
 			ctx.Data(200, "text/html", unsafe.Slice(unsafe.StringData(ret), len(ret)))
 			return
 		}
 
 		user := account.GetUser(se.Name)
-		if slices.Contains(user.VotedPath, v.Path) {
+		if slices.Contains(user.VotedPath, path) {
 			ctx.String(401, "投票失败：因为已经投过票了")
 			return
 		}
-		dv := Db.Find(v.Path)
+		v := Db.Find(path)
+		if v == nil {
+			ctx.String(404, "不存在的投票")
+			return
+		}
 		if !v.End.After(time.Now()) {
 			ctx.String(401, "投票失败：因为投票截止时间已经到了")
 			return
 		}
 		option := ctx.PostForm("k")
 		opt, err := strconv.Atoi(option)
-		dv.lock.Lock()
-		defer dv.lock.Unlock()
-		if err != nil || opt >= len(dv.Option) {
+		v.lock.Lock()
+		defer v.lock.Unlock()
+		if err != nil || opt >= len(v.Option) {
 			ctx.String(401, "投票失败")
 			return
 		}
 		Db.Changed()
-		dv.Option[opt].GotNum++
+		v.Option[opt].GotNum++
 		user.VotedPath = append(user.VotedPath, v.Path)
 		account.ReplaceUser(user)
 		ctx.String(200, "投票成功")

@@ -101,10 +101,6 @@ func init() {
 		panic("应该有img在显示totp页")
 	}
 	Init()
-	// 创建投票网页
-	for _, v := range vote.Db.Data {
-		vote.AddVoteHtml(v)
-	}
 }
 
 func Init() {
@@ -126,6 +122,7 @@ func Init() {
 		}
 		ctx.Next()
 	})
+	vote.Init()
 	s.GET("/", func(ctx *gin.Context) {
 		ctx.Data(200, "text/html", cacheFile("index.html"))
 	})

@@ -71,10 +71,6 @@ func init() {
 		Option: []vote.Option{{Name: "0"}},
 	})
 	add()
-	vote.AddVoteHtml(&vote.Info{
-		Path:   "/vote/k",
-		Option: []vote.Option{{Name: "0"}},
-	})
 	gin.SetMode(gin.ReleaseMode)
 }
 

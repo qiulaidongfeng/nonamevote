@@ -95,9 +95,13 @@ func (t *MapTable[T]) Add(v T) (int, func()) {
 	return int(atomic.AddInt64(&t.t.i, 1)), func() { t.t.M.Store(t.key(v), v); t.changed.Store(true); t.Changed() }
 }
 
+func (t *MapTable[T]) AddKV(key string, v T) {
+	t.t.M.Store(key, v)
+	t.changed.Store(true)
+	t.Changed()
+}
+
 func (t *MapTable[T]) Data(yield func(string, T) bool) {
-	//Note:如果Data的调用者会修改值，增加
-	//	t.changed.Store(true)
 	t.t.M.Range(func(key, value any) bool {
 		k := key.(string)
 		v := value.(T)
@@ -110,3 +114,11 @@ func (t *MapTable[T]) Find(k string) T {
 	r, _ := v.(T)
 	return r
 }
+
+func (t *MapTable[T]) Delete(k string) {
+	t.Changed()
+	t.changed.Store(true)
+	t.t.M.Delete(k)
+}
+
+var Test bool

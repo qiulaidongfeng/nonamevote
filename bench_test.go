@@ -63,7 +63,7 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-	if account.GetUser("k").Name != "k" {
+	if account.UserDb.Find("k").Name != "k" {
 		panic("test user generate fail")
 	}
 	_, add := vote.Db.Add(&vote.Info{
@@ -75,7 +75,7 @@ func init() {
 }
 
 func logink(t testing.TB) string {
-	u := account.GetUser("k")
+	u := account.UserDb.Find("k")
 	k, _ := otp.NewKeyFromURL(u.TotpURL)
 	code, _ := totp.GenerateCodeCustom(k.Secret(), time.Now(), totp.ValidateOpts{})
 	data := url.Values{

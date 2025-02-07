@@ -76,7 +76,7 @@ func main() {
 	<-end
 }
 
-func genTotpImg(user account.User) []byte {
+func genTotpImg(user *account.User) []byte {
 	key, err := otp.NewKeyFromURL(user.TotpURL)
 	if err != nil {
 		panic(err)
@@ -182,8 +182,8 @@ func Init() {
 			ctx.String(401, "登录失败，因为totp验证码必须是6位数")
 			return
 		}
-		user := account.GetUser(name)
-		if user.Name == "" {
+		user := account.UserDb.Find(name)
+		if user == nil {
 			ctx.String(401, "登录失败，因为没有这个用户")
 			return
 		}
@@ -253,8 +253,8 @@ func Init() {
 			ctx.String(401, "您未登录")
 			return
 		}
-		user := account.GetUser(se.Name)
-		if user.Name == "" {
+		user := account.UserDb.Find(se.Name)
+		if user == nil {
 			ctx.String(401, "没有这个用户")
 			return
 		}
@@ -305,9 +305,10 @@ func Init() {
 	})
 }
 
-func addSession(ctx *gin.Context, user account.User) {
+func addSession(ctx *gin.Context, user *account.User) {
 	se := account.NewSession(ctx, user.Name)
-	account.SessionDb.Add(se)
+	//TODO:处理session value重复
+	account.SessionDb.AddKV(se.Value, se)
 	cookie := se.EnCode()
 	wc, err := rsa.EncryptOAEP(sha256.New(), rand.Reader, pubkey, unsafe.Slice(unsafe.StringData(cookie), len(cookie)), nil)
 	if err != nil {
@@ -316,7 +317,6 @@ func addSession(ctx *gin.Context, user account.User) {
 	ctx.SetCookie("session", unsafe.String(unsafe.SliceData(wc), len(wc)), account.SessionMaxAge, "", "", true, true)
 	user.Session[user.SessionIndex%3] = md5.Sum(unsafe.Slice(unsafe.StringData(se.Value), len(se.Value)))
 	user.SessionIndex++
-	account.ReplaceUser(user)
 }
 
 var hfs = cachefs.NewHttpCacheFs(html)

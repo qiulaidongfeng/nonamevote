@@ -67,7 +67,7 @@ func (s *Session) EnCode() string {
 }
 
 // Check 检查用户的session是否有效
-func (s *Session) Check(ctx *gin.Context, cookie *http.Cookie, i int) (bool, error) {
+func (s *Session) Check(ctx *gin.Context, cookie *http.Cookie) (bool, error) {
 	if s.CreateTime.Sub(time.Now()) >= sessionMaxAge {
 		return false, errors.New("登录已失效，请重新登录")
 	}
@@ -78,7 +78,7 @@ func (s *Session) Check(ctx *gin.Context, cookie *http.Cookie, i int) (bool, err
 			slog.Error("", "err", err)
 		}
 		if userIp != s.Ip && s.Ip.Country != "" && userIp.Country != "" {
-			SessionDb.DeleteIndex(i)
+			SessionDb.Delete(s.Value)
 			return false, errors.New("IP地址在两次登录时不在同一个地区，请重新登录")
 		}
 	}
@@ -86,14 +86,14 @@ func (s *Session) Check(ctx *gin.Context, cookie *http.Cookie, i int) (bool, err
 	if useros != s.Os {
 		return false, nil
 	}
-	user := GetUser(s.Name)
-	if user.Name == "" {
-		SessionDb.DeleteIndex(i)
+	user := UserDb.Find(s.Name)
+	if user == nil {
+		SessionDb.Delete(s.Value)
 		return false, errors.New("没有这个用户 " + s.Name)
 	}
 	m := md5.Sum(unsafe.Slice(unsafe.StringData(s.Value), len(s.Value)))
 	if !slices.Contains(user.Session[:], m) {
-		SessionDb.DeleteIndex(i)
+		SessionDb.Delete(s.Value)
 		return false, errors.New("登录已失效，请重新登录")
 	}
 	return true, nil
@@ -170,7 +170,7 @@ func getOS(ctx *gin.Context) string {
 	return getOperatingSystem(userAgent)
 }
 
-var SessionDb = data.NewTable[Session]("./session")
+var SessionDb = data.NewMapTable[Session]("./session", nil)
 
 const SessionMaxAge = 12 * 60 * 60 //12小时
 
@@ -179,22 +179,26 @@ const sessionMaxAge = time.Hour * 12
 func init() {
 	SessionDb.LoadToOS()
 	now := time.Now()
-	SessionDb.Delete(func(s Session) bool {
-		//TODO:优化删除过时session,避免找到一个就删除一个
-		diff := now.Sub(s.CreateTime)
-		return diff > sessionMaxAge
-	})
 	SessionDb.Changed = run.Ticker(func() (changed bool) {
 		return SessionDb.SaveToOS()
 	})
+	for k, s := range SessionDb.Data {
+		diff := now.Sub(s.CreateTime)
+		if diff > sessionMaxAge {
+			SessionDb.Delete(k)
+			SessionDb.Changed()
+		}
+	}
+
 	go func() {
 		for {
 			//每经过一次session最大有效时间，检查一次所有session，有过期的删除。
 			<-time.Tick(sessionMaxAge)
-			for i, v := range SessionDb.Data {
+			for k, v := range SessionDb.Data {
 				diff := now.Sub(v.CreateTime)
 				if diff > sessionMaxAge {
-					SessionDb.DeleteIndex(i)
+					SessionDb.Delete(k)
+					SessionDb.Changed()
 				}
 			}
 		}
@@ -207,12 +211,10 @@ func CheckLogined(ctx *gin.Context) (bool, error, Session) {
 	if err == nil {
 		ok, se := DecodeSession(s.Value)
 		if ok {
-			for i, v := range SessionDb.Data {
-				if v.Value == se.Value {
-					ok, err := se.Check(ctx, s, i)
-					return ok, err, se
-
-				}
+			v := SessionDb.Find(se.Value)
+			if v.Value == se.Value {
+				ok, err := se.Check(ctx, s)
+				return ok, err, se
 			}
 		}
 	} else if err != http.ErrNoCookie {

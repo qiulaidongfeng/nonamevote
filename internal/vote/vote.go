@@ -247,7 +247,11 @@ func Init() {
 			return
 		}
 
-		user := account.GetUser(se.Name)
+		user := account.UserDb.Find(se.Name)
+		if user == nil {
+			//Note:会在极短的时间，从已登录变成已注销，只可能是恶意攻击
+			return
+		}
 		if slices.Contains(user.VotedPath, path) {
 			ctx.String(401, "投票失败：因为已经投过票了")
 			return
@@ -272,7 +276,6 @@ func Init() {
 		Db.Changed()
 		v.Option[opt].GotNum++
 		user.VotedPath = append(user.VotedPath, v.Path)
-		account.ReplaceUser(user)
 		ctx.String(200, "投票成功")
 	})
 }

@@ -15,7 +15,6 @@ import (
 	"net/url"
 	"nonamevote/internal/codec"
 	"nonamevote/internal/data"
-	"nonamevote/internal/run"
 	"os"
 	"slices"
 	"strings"
@@ -179,9 +178,6 @@ const sessionMaxAge = time.Hour * 12
 func init() {
 	SessionDb.LoadToOS()
 	now := time.Now()
-	SessionDb.Changed = run.Ticker(func() (changed bool) {
-		return SessionDb.SaveToOS()
-	})
 	for k, s := range SessionDb.Data {
 		diff := now.Sub(s.CreateTime)
 		if diff > sessionMaxAge {

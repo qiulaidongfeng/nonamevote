@@ -11,7 +11,6 @@ type MapTable[T any] struct {
 	t       maptable[T]
 	key     func(T) string
 	lock    sync.Mutex
-	changed atomic.Bool
 	Changed func()
 }
 
@@ -24,7 +23,7 @@ type maptable[T any] struct {
 func NewMapTable[T any](path string, key func(T) string) *MapTable[T] {
 	t := MapTable[T]{key: key}
 	t.t.Path = path
-	t.Changed = func() {}
+	t.Changed = func() {t.SaveToOS()}
 	return &t
 }
 
@@ -58,7 +57,7 @@ func (t *MapTable[T]) LoadToOS() {
 	atomic.StoreInt64(&t.t.i, d.I)
 }
 
-func (t *MapTable[T]) SaveToOS() (changed bool) {
+func (t *MapTable[T]) SaveToOS() {
 	if Test {
 		return
 	}
@@ -88,16 +87,15 @@ func (t *MapTable[T]) SaveToOS() (changed bool) {
 	if err != nil {
 		panic(err)
 	}
-	return t.changed.Load()
+	return 
 }
 
 func (t *MapTable[T]) Add(v T) (int, func()) {
-	return int(atomic.AddInt64(&t.t.i, 1)), func() { t.t.M.Store(t.key(v), v); t.changed.Store(true); t.Changed() }
+	return int(atomic.AddInt64(&t.t.i, 1)), func() { t.t.M.Store(t.key(v), v); t.Changed() }
 }
 
 func (t *MapTable[T]) AddKV(key string, v T) {
 	t.t.M.Store(key, v)
-	t.changed.Store(true)
 	t.Changed()
 }
 
@@ -117,7 +115,6 @@ func (t *MapTable[T]) Find(k string) T {
 
 func (t *MapTable[T]) Delete(k string) {
 	t.Changed()
-	t.changed.Store(true)
 	t.t.M.Delete(k)
 }
 

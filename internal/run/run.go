@@ -7,23 +7,18 @@ import (
 
 // Ticker 间隔一定时间执行f
 // 默认间隔1分钟执行1次
-// 如果返回false,表示执行f没有变化
-// 将按间隔365天执行1次f
+// 然后间隔365天执行1次f
 // 除非change被调用，将恢复间隔至1分钟
-func Ticker(f func() (changed bool)) (change func()) {
+func Ticker(f func()) (change func()) {
 	interval := 1 * time.Minute
 	sig := make(chan struct{})
 	send := atomic.Bool{}
 	go func() {
 		for {
 			t := time.AfterFunc(interval, func() {
-				c := f()
-				if !c {
-					interval = 24 * time.Hour * 365
-					send.Store(true)
-				} else {
-					interval = 1 * time.Minute
-				}
+				send.Store(true)
+				f()
+				interval = 24 * time.Hour * 365
 			})
 			select {
 			case <-sig:

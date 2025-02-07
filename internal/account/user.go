@@ -4,7 +4,6 @@ import (
 	"crypto/rand"
 	"fmt"
 	"nonamevote/internal/data"
-	"nonamevote/internal/run"
 
 	"github.com/pquerna/otp/totp"
 )
@@ -41,9 +40,4 @@ var UserDb = data.NewMapTable[*User]("./user", nil)
 
 func init() {
 	UserDb.LoadToOS()
-	UserDb.Changed = run.Ticker(func() (changed bool) {
-		return UserDb.SaveToOS()
-	})
 }
-
-

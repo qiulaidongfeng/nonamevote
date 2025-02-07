@@ -7,7 +7,6 @@ import (
 	"log/slog"
 	"nonamevote/internal/account"
 	"nonamevote/internal/data"
-	"nonamevote/internal/run"
 	"os"
 	"path/filepath"
 	"slices"
@@ -150,12 +149,6 @@ var NameDb = data.NewMapTable("./votename", func(n *NameAndPath) string { return
 func Init() {
 	Db.LoadToOS()
 	NameDb.LoadToOS()
-	Db.Changed = run.Ticker(func() (changed bool) {
-		return Db.SaveToOS()
-	})
-	NameDb.Changed = run.Ticker(func() (changed bool) {
-		return NameDb.SaveToOS()
-	})
 
 	S.GET("/vote/:num", func(ctx *gin.Context) {
 		// 先检查是否登录

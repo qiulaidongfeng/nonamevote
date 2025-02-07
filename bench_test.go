@@ -20,10 +20,9 @@ import (
 	"github.com/pquerna/otp/totp"
 )
 
+var cv string
+
 func BenchmarkCreateVote(b *testing.B) {
-	s = gin.New()
-	Init()
-	cv := logink(b)
 	cookie := &http.Cookie{
 		Name:  "session",
 		Value: cv,
@@ -49,7 +48,16 @@ func BenchmarkCreateVote(b *testing.B) {
 		go func() {
 			wg.Done()
 			w := httptest.NewRecorder()
+			req := req.Clone(req.Context())
 			s.Handler().ServeHTTP(w, req)
+			if w.Code != 200 {
+				b.Fail()
+				bs, err := io.ReadAll(w.Body)
+				if err != nil {
+					panic(err)
+				}
+				b.Log(string(bs))
+			}
 		}()
 
 	}
@@ -66,6 +74,9 @@ func init() {
 	if account.UserDb.Find("k").Name != "k" {
 		panic("test user generate fail")
 	}
+	s = gin.New()
+	Init()
+	cv = logink(nil)
 	_, add := vote.Db.Add(&vote.Info{
 		Path:   "/vote/k",
 		Option: []vote.Option{{Name: "0"}},

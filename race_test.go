@@ -1,5 +1,3 @@
-//go:build race
-
 package main
 
 import (
@@ -38,7 +36,6 @@ func TestRace(t *testing.T) {
 			s.Handler().ServeHTTP(w, req)
 		}()
 	}
-	wg.Wait()
 	sendRequest(t, &wg, "POST", "/createvote", func(req *http.Request, v *url.Values) {
 		req.AddCookie(&http.Cookie{
 			Name:  "session",

@@ -115,21 +115,25 @@ func benchmark(b *testing.B, req *http.Request, f func(*http.Request)) {
 func init() {
 	account.Test = true
 	data.Test = true
-	_, err := account.NewUser("k")
+	k, err := account.NewUser("k")
 	if err != nil {
 		panic(err)
 	}
 	if account.UserDb.Find("k").Name != "k" {
 		panic("test user generate fail")
 	}
+	k.VotedPath = append(k.VotedPath, "/vote/k")
 	s = gin.New()
 	Init()
 	cv = logink(nil)
 	_, add := vote.Db.Add(&vote.Info{
-		Path:   "/vote/k",
-		Option: []vote.Option{{Name: "0"}},
+		Path:      "/vote/k",
+		Introduce: "",
+		End:       time.Date(2100, time.April, 1, 1, 1, 1, 1, time.Local),
+		Option:    []vote.Option{{Name: "0"}},
 	})
 	add()
+	vote.NameDb.AddKV("k", &vote.NameAndPath{Path: []string{"/vote/k"}})
 	gin.SetMode(gin.ReleaseMode)
 }
 

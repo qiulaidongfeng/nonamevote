@@ -9,6 +9,7 @@ import (
 	"nonamevote/internal/account"
 	"nonamevote/internal/data"
 	"nonamevote/internal/vote"
+	"strconv"
 	"testing"
 	"time"
 
@@ -68,6 +69,21 @@ func BenchmarkSearch(b *testing.B) {
 		v := &req.PostForm
 		v.Set("search", "1")
 	})
+}
+
+func BenchmarkAllVote(b *testing.B) {
+	req := httptest.NewRequest("GET", "/allvote", nil)
+
+	origin1 := vote.Db
+	origin2 := vote.NameDb
+	defer func() { vote.Db = origin1; vote.NameDb = origin2 }()
+	vote.Db = data.NewMapTable[*vote.Info]("", nil)
+	vote.NameDb = data.NewMapTable[*vote.NameAndPath]("", nil)
+	for i := range 4 {
+		vote.Db.AddKV("/vote/"+strconv.Itoa(i), &vote.Info{})
+		vote.NameDb.AddKV(strconv.Itoa(i), &vote.NameAndPath{Path: []string{"/vote/" + strconv.Itoa(i)}})
+	}
+	benchmark(b, req, nil)
 }
 
 func benchmark(b *testing.B, req *http.Request, f func(*http.Request)) {

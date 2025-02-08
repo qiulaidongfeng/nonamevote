@@ -1,6 +1,7 @@
 package main
 
 import (
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -12,30 +13,25 @@ const n = 500
 
 func TestRace(t *testing.T) {
 	var wg sync.WaitGroup
-	sendRequest(t, &wg, "GET", "/", nil)
-	sendRequest(t, &wg, "GET", "/register", nil)
-	sendRequest(t, &wg, "POST", "/register", func(req *http.Request, v *url.Values) { v.Set("name", "") })
-	sendRequest(t, &wg, "POST", "/register", func(req *http.Request, v *url.Values) { v.Set("name", randStr()) })
-	sendRequest(t, &wg, "POST", "/createvote", func(req *http.Request, v *url.Values) { v.Set("name", randStr()) })
-	sendRequest(t, &wg, "GET", "/vote/k", nil)
-	cv := logink(t)
-	for range n {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-
-			cookie := &http.Cookie{
-				Name:  "session",
-				Value: cv,
-			}
-
-			req := httptest.NewRequest("POST", "/login", nil)
-			req.PostForm = make(url.Values)
-			req.AddCookie(cookie)
-			w := httptest.NewRecorder()
-			s.Handler().ServeHTTP(w, req)
-		}()
-	}
+	sendRequest(t, &wg, "GET", "/", nil, 200)
+	sendRequest(t, &wg, "GET", "/register", nil, 200)
+	sendRequest(t, &wg, "POST", "/register", func(req *http.Request, v *url.Values) { v.Set("name", "") }, 400)
+	sendRequest(t, &wg, "POST", "/register", func(req *http.Request, v *url.Values) { v.Set("name", randStr()) }, 200)
+	sendRequest(t, &wg, "POST", "/createvote", func(req *http.Request, v *url.Values) {
+		req.AddCookie(&http.Cookie{
+			Name:  "session",
+			Value: cv,
+		})
+		v.Set("name", randStr())
+	}, 400)
+	sendRequest(t, &wg, "GET", "/vote/k", nil, 200)
+	sendRequest(t, &wg, "POST", "/login", func(req *http.Request, v *url.Values) {
+		cookie := &http.Cookie{
+			Name:  "session",
+			Value: cv,
+		}
+		req.AddCookie(cookie)
+	}, 200)
 	sendRequest(t, &wg, "POST", "/createvote", func(req *http.Request, v *url.Values) {
 		req.AddCookie(&http.Cookie{
 			Name:  "session",
@@ -46,24 +42,24 @@ func TestRace(t *testing.T) {
 		v.Set("time", "11:00")
 		v.Set("introduce", "l")
 		v.Set("option", "k l")
-	})
+	}, 200)
 	sendRequest(t, &wg, "GET", "/vote/k", func(req *http.Request, v *url.Values) {
 		req.AddCookie(&http.Cookie{
 			Name:  "session",
 			Value: cv,
 		})
-	})
+	}, 200)
 	sendRequest(t, &wg, "POST", "/vote/k", func(req *http.Request, v *url.Values) {
 		req.AddCookie(&http.Cookie{
 			Name:  "session",
 			Value: cv,
 		})
 		v.Set("k", "0")
-	})
+	}, 401)
 	wg.Wait()
 }
 
-func sendRequest(t *testing.T, wg *sync.WaitGroup, method string, path string, form func(*http.Request, *url.Values)) {
+func sendRequest(t *testing.T, wg *sync.WaitGroup, method string, path string, form func(*http.Request, *url.Values), code int) {
 	for range n {
 		wg.Add(1)
 		go func() {
@@ -75,6 +71,11 @@ func sendRequest(t *testing.T, wg *sync.WaitGroup, method string, path string, f
 			}
 			w := httptest.NewRecorder()
 			s.Handler().ServeHTTP(w, req)
+			if w.Code != code {
+				t.Fail()
+				b, _ := io.ReadAll(w.Body)
+				t.Log(method, path, w.Code, string(b))
+			}
 		}()
 	}
 }

@@ -132,12 +132,12 @@ func Init() {
 	s.POST("/register", func(ctx *gin.Context) {
 		name := ctx.PostForm("name")
 		if name == "" {
-			ctx.String(401, "注册失败，因为没有提供用户名")
+			ctx.String(400, "注册失败，因为没有提供用户名")
 			return
 		}
 		user, err := account.NewUser(name)
 		if err != nil {
-			ctx.String(401, err.Error())
+			ctx.String(409, err.Error())
 			return
 		}
 		//在注册时直接就登录
@@ -227,7 +227,7 @@ func Init() {
 		}
 		_, err = vote.ParserCreateVote(ctx)
 		if err != nil {
-			ctx.String(401, "创建投票失败：%s", err.Error())
+			ctx.String(400, "创建投票失败：%s", err.Error())
 			return
 		}
 		ctx.String(200, "创建投票成功")

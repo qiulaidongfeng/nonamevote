@@ -24,9 +24,11 @@ func newKVDB(host string, port string) KVDB {
 	return KVDB{rdb: rdb}
 }
 
-func (k *KVDB) AddIpCount(ip string) int64 {
+func (k *KVDB) AddIpCount(ip string) (r int64) {
 	if Test {
-		return 0
+		defer func() {
+			r = 0
+		}()
 	}
 	i, err := k.rdb.Incr(context.Background(), ip).Result()
 	if i == 1 {

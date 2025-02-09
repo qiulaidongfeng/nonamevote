@@ -169,20 +169,18 @@ func getOS(ctx *gin.Context) string {
 	return getOperatingSystem(userAgent)
 }
 
-var SessionDb = data.NewMapTable[Session]("./session", nil)
+var SessionDb = data.NewDb[Session](data.Session, nil)
 
 const SessionMaxAge = 12 * 60 * 60 //12小时
 
 const sessionMaxAge = time.Hour * 12
 
 func init() {
-	SessionDb.LoadToOS()
 	now := time.Now()
 	for k, s := range SessionDb.Data {
 		diff := now.Sub(s.CreateTime)
 		if diff > sessionMaxAge {
 			SessionDb.Delete(k)
-			SessionDb.Changed()
 		}
 	}
 
@@ -194,7 +192,6 @@ func init() {
 				diff := now.Sub(v.CreateTime)
 				if diff > sessionMaxAge {
 					SessionDb.Delete(k)
-					SessionDb.Changed()
 				}
 			}
 		}

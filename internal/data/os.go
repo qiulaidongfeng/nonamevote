@@ -2,33 +2,40 @@ package data
 
 import (
 	"encoding/json"
+	"nonamevote/internal/config"
+	"nonamevote/internal/run"
 	"os"
 	"sync"
 	"sync/atomic"
+	"time"
 )
 
-type MapTable[T any] struct {
-	t       maptable[T]
+type OsDb[T any] struct {
+	t       osdb[T]
 	key     func(T) string
 	lock    sync.Mutex
-	Changed func()
+	changed func()
+	ipDb    bool
 }
 
-type maptable[T any] struct {
+type osdb[T any] struct {
 	Path string
 	M    sync.Map
 	i    int64
 }
 
-func NewMapTable[T any](path string, key func(T) string) *MapTable[T] {
-	t := MapTable[T]{key: key}
+func NewOsDb[T any](path string, key func(T) string) *OsDb[T] {
+	t := OsDb[T]{key: key}
 	t.t.Path = path
-	t.Changed = func() {t.SaveToOS()}
+	t.changed = run.Ticker(func() {
+		t.Save()
+	})
+	t.Load()
 	return &t
 }
 
-func (t *MapTable[T]) LoadToOS() {
-	if Test {
+func (t *OsDb[T]) Load() {
+	if Test || t.ipDb {
 		return
 	}
 	t.lock.Lock()
@@ -57,8 +64,8 @@ func (t *MapTable[T]) LoadToOS() {
 	atomic.StoreInt64(&t.t.i, d.I)
 }
 
-func (t *MapTable[T]) SaveToOS() {
-	if Test {
+func (t *OsDb[T]) Save() {
+	if Test || t.ipDb {
 		return
 	}
 	t.lock.Lock()
@@ -87,19 +94,19 @@ func (t *MapTable[T]) SaveToOS() {
 	if err != nil {
 		panic(err)
 	}
-	return 
+	return
 }
 
-func (t *MapTable[T]) Add(v T) (int, func()) {
+func (t *OsDb[T]) Add(v T) (int, func()) {
 	return int(atomic.AddInt64(&t.t.i, 1)), func() { t.t.M.Store(t.key(v), v); t.Changed() }
 }
 
-func (t *MapTable[T]) AddKV(key string, v T) {
+func (t *OsDb[T]) AddKV(key string, v T) {
 	t.t.M.Store(key, v)
 	t.Changed()
 }
 
-func (t *MapTable[T]) Data(yield func(string, T) bool) {
+func (t *OsDb[T]) Data(yield func(string, T) bool) {
 	t.t.M.Range(func(key, value any) bool {
 		k := key.(string)
 		v := value.(T)
@@ -107,15 +114,49 @@ func (t *MapTable[T]) Data(yield func(string, T) bool) {
 	})
 }
 
-func (t *MapTable[T]) Find(k string) T {
-	v, _ := t.t.M.Load(k)
-	r, _ := v.(T)
-	return r
+func (t *OsDb[T]) Find(k string) (ret T) {
+	v, ok := t.t.M.Load(k)
+	if !ok {
+		return
+	}
+	return v.(T)
 }
 
-func (t *MapTable[T]) Delete(k string) {
+func (t *OsDb[T]) Delete(k string) {
 	t.Changed()
 	t.t.M.Delete(k)
 }
 
-var Test bool
+func (t *OsDb[T]) Changed() {
+	t.changed()
+}
+
+func (t *OsDb[T]) AddIpCount(ip string) (r int64) {
+	if Test {
+		defer func() {
+			r = 0
+		}()
+	}
+	for {
+		v, ok := t.t.M.Load(ip)
+		if !ok {
+			p := int64(1)
+			old, load := t.t.M.Swap(ip, &p)
+			if !load {
+				time.AfterFunc(time.Duration(config.GetExpiration())*time.Second, func() {
+					t.t.M.Delete(ip)
+				})
+				return
+			}
+			v = old
+		}
+		p := v.(*int64)
+		return atomic.AddInt64(p, 1)
+	}
+}
+
+// 为实现接口而写，实际无效果
+func (t *OsDb[T]) Updata(key string, old any, field string, v any) (ok bool) { return true }
+
+// 为实现接口而写，实际无效果
+func (t *OsDb[T]) IncOption(key string, i int) {}

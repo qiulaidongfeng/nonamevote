@@ -10,6 +10,7 @@ import (
 	"nonamevote/internal/data"
 	"nonamevote/internal/vote"
 	"strconv"
+	"sync"
 	"testing"
 	"time"
 
@@ -59,10 +60,10 @@ func BenchmarkSearch(b *testing.B) {
 	origin1 := vote.Db
 	origin2 := vote.NameDb
 	defer func() { vote.Db = origin1; vote.NameDb = origin2 }()
-	vote.Db = data.NewMapTable[*vote.Info]("", nil)
-	vote.Db.AddKV("/vote/1", &vote.Info{})
-	vote.NameDb = data.NewMapTable[*vote.NameAndPath]("", nil)
-	vote.NameDb.AddKV("1", &vote.NameAndPath{Path: []string{"/vote/1"}})
+	vote.Db = data.NewDb[*vote.Info](data.Vote, nil)
+	vote.Db.AddKV("/vote/1", &vote.Info{Lock: new(sync.Mutex)})
+	vote.NameDb = data.NewDb[*vote.NameAndPath](data.VoteName, nil)
+	vote.NameDb.AddKV("1", &vote.NameAndPath{Path: []string{"/vote/1"}, Lock: new(sync.Mutex)})
 
 	benchmark(b, req, func(req *http.Request) {
 		req.PostForm = make(url.Values)
@@ -77,11 +78,11 @@ func BenchmarkAllVote(b *testing.B) {
 	origin1 := vote.Db
 	origin2 := vote.NameDb
 	defer func() { vote.Db = origin1; vote.NameDb = origin2 }()
-	vote.Db = data.NewMapTable[*vote.Info]("", nil)
-	vote.NameDb = data.NewMapTable[*vote.NameAndPath]("", nil)
+	vote.Db = data.NewOsDb[*vote.Info]("", nil)
+	vote.NameDb = data.NewOsDb[*vote.NameAndPath]("", nil)
 	for i := range 4 {
-		vote.Db.AddKV("/vote/"+strconv.Itoa(i), &vote.Info{})
-		vote.NameDb.AddKV(strconv.Itoa(i), &vote.NameAndPath{Path: []string{"/vote/" + strconv.Itoa(i)}})
+		vote.Db.AddKV("/vote/"+strconv.Itoa(i), &vote.Info{Lock: new(sync.Mutex)})
+		vote.NameDb.AddKV(strconv.Itoa(i), &vote.NameAndPath{Path: []string{"/vote/" + strconv.Itoa(i)}, Lock: new(sync.Mutex)})
 	}
 	benchmark(b, req, nil)
 }
@@ -112,7 +113,7 @@ func benchmark(b *testing.B, req *http.Request, f func(*http.Request)) {
 	})
 }
 
-func init() {
+func test_init() {
 	account.Test = true
 	data.Test = true
 	k, err := account.NewUser("k")
@@ -123,6 +124,8 @@ func init() {
 		panic("test user generate fail")
 	}
 	k.VotedPath = append(k.VotedPath, "/vote/k")
+	//TODO:优化
+	account.UserDb.AddKV("k", k)
 	s = gin.New()
 	Init()
 	cv = logink(nil)
@@ -131,9 +134,10 @@ func init() {
 		Introduce: "",
 		End:       time.Date(2100, time.April, 1, 1, 1, 1, 1, time.Local),
 		Option:    []vote.Option{{Name: "0"}},
+		Lock:      new(sync.Mutex),
 	})
 	add()
-	vote.NameDb.AddKV("k", &vote.NameAndPath{Path: []string{"/vote/k"}})
+	vote.NameDb.AddKV("k", &vote.NameAndPath{Path: []string{"/vote/k"}, Lock: new(sync.Mutex)})
 	gin.SetMode(gin.ReleaseMode)
 }
 

@@ -36,8 +36,4 @@ func NewUser(Name string) (*User, error) {
 	return &user, nil
 }
 
-var UserDb = data.NewMapTable[*User]("./user", nil)
-
-func init() {
-	UserDb.LoadToOS()
-}
+var UserDb = data.NewDb[*User](data.User, nil)

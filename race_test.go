@@ -1,12 +1,19 @@
 package main
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"nonamevote/internal/config"
+	"nonamevote/internal/data"
+	"nonamevote/internal/vote"
+	"os"
+	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"unsafe"
 )
@@ -64,7 +71,58 @@ func TestRace(t *testing.T) {
 	sendRequest(t, &wg, "POST", "/search", func(r *http.Request, v *url.Values) {
 		v.Set("search", "k")
 	}, 200, func(s string) bool { return strings.Contains(s, `/vote/k";`) })
+	sendRequest(t, &wg, "POST", "/vote/k?comment=true", func(req *http.Request, v *url.Values) {
+		req.AddCookie(&http.Cookie{
+			Name:  "session",
+			Value: cv,
+		})
+		v.Set("commentValue", "0")
+	}, 200, func(s string) bool { return strings.Contains(s, "/vote/k") })
+	i := int64(0)
+	sendRequest(t, &wg, "POST", "/vote/k", func(req *http.Request, v *url.Values) {
+		//TODO:避免这里导致在redis模式，不能使用-count重复运行测试
+		req1 := httptest.NewRequest("POST", "/register", nil)
+		req1.PostForm = url.Values{
+			"name": {"test" + strconv.Itoa(int(atomic.AddInt64(&i, 1)))},
+		}
+
+		w := httptest.NewRecorder()
+		s.Handler().ServeHTTP(w, req1)
+
+		resp := w.Result()
+
+		cookies := resp.Cookies()
+		if len(cookies) == 0 {
+			body, _ := io.ReadAll(resp.Body)
+			t.Logf("%+v\n", string(body))
+			panic("no session")
+		}
+		var cv string
+		for _, v := range cookies {
+			if v.Name == "session" {
+				cv = v.Value
+			}
+		}
+
+		req.AddCookie(&http.Cookie{
+			Name:  "session",
+			Value: cv,
+		})
+		v.Set("k", "0")
+	}, 200, func(s string) bool { return strings.Contains(s, "投票成功") })
 	wg.Wait()
+
+	v := vote.Db.Find("/vote/k")
+	if len(v.Comment) != n {
+		t.Fail()
+		t.Log(len(v.Comment))
+		t.Log("数据竞争在增加评论时")
+	}
+	if v.Option[0].GotNum != n {
+		t.Fail()
+		t.Log(v.Option[0].GotNum)
+		t.Log("数据竞争在增加得票数时")
+	}
 }
 
 func sendRequest(t *testing.T, wg *sync.WaitGroup, method string, path string, form func(*http.Request, *url.Values), code int, check func(s string) bool) {
@@ -87,4 +145,32 @@ func sendRequest(t *testing.T, wg *sync.WaitGroup, method string, path string, f
 			}
 		}()
 	}
+}
+
+func TestMain(m *testing.M) {
+	if config.GetDbMode() == "redis" {
+		for _, v := range []int{data.Ip, data.Session, data.User, data.Vote, data.VoteName} {
+			d := data.NewDb[int64](v, nil)
+			have := false
+			func() {
+				defer func() {
+					if err := recover(); err != nil {
+						//可能会有类型不对导致的panic,说明数据库有值
+						have = true
+					}
+				}()
+				d.Data(func(s string, i int64) bool {
+					have = true
+					return false
+				})
+			}()
+			if have {
+				fmt.Println("在redis模式，测试用的数据库应该是空的")
+				os.Exit(2)
+			}
+		}
+	}
+	test_init()
+	m.Run()
+	data.NewDb[int64](data.Ip, nil).Save() //让测试数据库清空
 }

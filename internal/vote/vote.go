@@ -26,7 +26,7 @@ type Info struct {
 	Path      string
 	Option    []Option
 	Comment   []string
-	lock      sync.Mutex
+	Lock      sync.Locker `json:"-"`
 }
 
 type Option struct {
@@ -36,7 +36,7 @@ type Option struct {
 
 // ParserCreateVote 从post请求表单中获取创建投票的信息
 func ParserCreateVote(ctx *gin.Context) (*Info, error) {
-	var ret = &Info{}
+	var ret = &Info{Lock: new(sync.Mutex)}
 	name := ctx.PostForm("name")
 	if name == "" {
 		return ret, errors.New("投票名不能为空")
@@ -116,12 +116,20 @@ func ParserCreateVote(ctx *gin.Context) (*Info, error) {
 		//TODO:修复这里的竞态条件
 		//如果有两个同名投票，同时执行到这里，只有一个会被记录
 		n = new(NameAndPath)
+		n.Lock = new(sync.Mutex)
 		n.Path = append(n.Path, path)
 		NameDb.AddKV(ret.Name, n)
 	} else {
-		n.Lock.Lock()
-		n.Path = append(n.Path, path)
-		n.Lock.Unlock()
+		for {
+			n.Lock.Lock()
+			old := slices.Clone(n.Path)
+			n.Path = append(n.Path, path)
+			n.Lock.Unlock()
+			if NameDb.Updata(ret.Name, old, "Path", n.Path) {
+				break
+			}
+			n = NameDb.Find(ret.Name)
+		}
 	}
 	return ret, nil
 }
@@ -137,16 +145,13 @@ var loc = func() *time.Location {
 
 type NameAndPath struct {
 	Path []string
-	Lock sync.Mutex `json:"-"`
+	Lock sync.Locker `json:"-"`
 }
 
-var Db = data.NewMapTable[*Info]("./vote", func(i *Info) string { return i.Path })
-var NameDb = data.NewMapTable[*NameAndPath]("./votename", nil)
+var Db = data.NewDb(data.Vote, func(i *Info) string { return i.Path })
+var NameDb = data.NewDb[*NameAndPath](data.VoteName, nil)
 
 func Init() {
-	Db.LoadToOS()
-	NameDb.LoadToOS()
-
 	S.GET("/vote/:num", func(ctx *gin.Context) {
 		// 先检查是否登录
 		logined, err, _ := account.CheckLogined(ctx)
@@ -201,10 +206,17 @@ func Init() {
 				return
 			}
 			Db.Changed()
-			v.lock.Lock()
-			v.Comment = append(v.Comment, comment)
-			v.lock.Unlock()
-
+			for {
+				v.Lock.Lock()
+				old := slices.Clone(v.Comment)
+				v.Comment = append(v.Comment, comment)
+				if Db.Updata(v.Path, old, "Comment", v.Comment) {
+					v.Lock.Unlock()
+					break
+				}
+				v.Lock.Unlock()
+				v = Db.Find(path)
+			}
 			ret := `
 			<!DOCTYPE html>
 			<html lang="zh-CN">
@@ -257,15 +269,24 @@ func Init() {
 		}
 		option := ctx.PostForm("k")
 		opt, err := strconv.Atoi(option)
-		v.lock.Lock()
-		defer v.lock.Unlock()
+		v.Lock.Lock()
+		defer v.Lock.Unlock()
 		if err != nil || opt >= len(v.Option) {
 			ctx.String(401, "投票失败")
 			return
 		}
 		Db.Changed()
-		v.Option[opt].GotNum++
-		user.VotedPath = append(user.VotedPath, v.Path)
+		v.Option[opt].GotNum++ //TODO:研究删除这一行
+		Db.IncOption(path, opt)
+
+		for {
+			old := slices.Clone(user.VotedPath)
+			user.VotedPath = append(user.VotedPath, v.Path)
+			if account.UserDb.Updata(user.Name, old, "VotedPath", user.VotedPath) {
+				break
+			}
+			user = account.UserDb.Find(se.Name)
+		}
 		ctx.String(200, "投票成功")
 	})
 }
@@ -279,12 +300,12 @@ var votetmpl = func() *template.Template {
 	m := template.FuncMap{
 		"getOption": func(name string) []Option {
 			for _, v := range Db.Data {
-				v.lock.Lock()
+				v.Lock.Lock()
 				if v.Name == name {
-					v.lock.Unlock()
+					v.Lock.Unlock()
 					return v.Option
 				}
-				v.lock.Unlock()
+				v.Lock.Unlock()
 			}
 			panic("未知的投票")
 		},

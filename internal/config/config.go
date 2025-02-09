@@ -31,14 +31,16 @@ var config = struct {
 	host, port           atomic.Pointer[string]
 	expiration, maxcount atomic.Int64
 	link                 atomic.Pointer[string]
+	mode                 atomic.Pointer[string]
 }{}
 
 func loadConfig() {
 	config.host.Store(ptr(v.GetString("redis.host")))
 	config.port.Store(ptr(v.GetString("redis.port")))
-	config.expiration.Store(int64(v.GetInt("redis.expiration")))
-	config.maxcount.Store(v.GetInt64("redis.maxcount"))
+	config.expiration.Store(int64(v.GetInt("ip_limit.expiration")))
+	config.maxcount.Store(v.GetInt64("ip_limit.maxcount"))
 	config.link.Store(ptr(v.GetString("link.path")))
+	config.mode.Store(ptr(v.GetString("db.mode")))
 }
 
 func ptr(v string) *string {
@@ -66,4 +68,8 @@ func GetMaxCount() int64 {
 
 func GetLink() string {
 	return *config.link.Load()
+}
+
+func GetDbMode() string {
+	return *config.mode.Load()
 }

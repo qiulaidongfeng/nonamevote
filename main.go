@@ -62,10 +62,10 @@ func main() {
 		if err != nil {
 			slog.Error("", "err", err)
 		}
-		account.SessionDb.SaveToOS()
-		account.UserDb.SaveToOS()
-		vote.Db.SaveToOS()
-		vote.NameDb.SaveToOS()
+		account.SessionDb.Save()
+		account.UserDb.Save()
+		vote.Db.Save()
+		vote.NameDb.Save()
 		close(end)
 		fmt.Println("关机完成")
 	}()
@@ -315,8 +315,17 @@ func addSession(ctx *gin.Context, user *account.User) {
 		panic(err)
 	}
 	ctx.SetCookie("session", unsafe.String(unsafe.SliceData(wc), len(wc)), account.SessionMaxAge, "", "", true, true)
+
+	old1 := user.Session
+	old2 := user.SessionIndex
+
 	user.Session[user.SessionIndex%3] = md5.Sum(unsafe.Slice(unsafe.StringData(se.Value), len(se.Value)))
 	user.SessionIndex++
+
+	//Note:这里不需要重试，如果有用户在极短时间重复登录，不是正常行为，是恶意攻击者有的行为
+	account.UserDb.Updata(user.Name, old1, "Session", user.Session)
+	//TODO:优化使用HIncrBy
+	account.UserDb.Updata(user.Name, old2, "SessionIndex", user.SessionIndex)
 }
 
 var hfs = cachefs.NewHttpCacheFs(html)

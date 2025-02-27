@@ -3,8 +3,8 @@ package account
 import (
 	"crypto/rand"
 	"fmt"
-	"nonamevote/internal/data"
 
+	"gitee.com/qiulaidongfeng/nonamevote/internal/data"
 	"github.com/pquerna/otp/totp"
 )
 

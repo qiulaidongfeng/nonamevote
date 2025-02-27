@@ -4,9 +4,8 @@ import (
 	"strconv"
 	"strings"
 
-	"nonamevote/internal/config"
-	"nonamevote/internal/vote"
-
+	"gitee.com/qiulaidongfeng/nonamevote/internal/config"
+	"gitee.com/qiulaidongfeng/nonamevote/internal/vote"
 	"github.com/gorilla/feeds"
 )
 

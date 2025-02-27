@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"html/template"
 	"log/slog"
-	"nonamevote/internal/account"
-	"nonamevote/internal/data"
 	"os"
 	"path/filepath"
 	"slices"
@@ -16,6 +14,9 @@ import (
 	"time"
 	"unsafe"
 
+	"gitee.com/qiulaidongfeng/nonamevote/internal/account"
+	"gitee.com/qiulaidongfeng/nonamevote/internal/config"
+	"gitee.com/qiulaidongfeng/nonamevote/internal/data"
 	"github.com/gin-gonic/gin"
 )
 
@@ -293,7 +294,15 @@ func Init() {
 
 var S *gin.Engine
 
-var tmpl = filepath.Join("."+string(filepath.Separator), "template")
+var prefix = func() string {
+	r := "."
+	if config.Test {
+		r = "../"
+	}
+	return r
+}()
+
+var tmpl = filepath.Join(prefix+string(filepath.Separator), "template")
 
 var votetmpl = func() *template.Template {
 	t := template.New("vote")

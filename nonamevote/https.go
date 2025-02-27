@@ -1,4 +1,4 @@
-package main
+package nonamevote
 
 import (
 	"crypto/rand"
@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-func GenSSL() {
+func genSSL() {
 	// 生成私钥
 	priv, err := rsa.GenerateKey(rand.Reader, 4096)
 	if err != nil {
@@ -64,4 +64,21 @@ func GenSSL() {
 	}
 	pem.Encode(keyOut, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(priv)})
 	keyOut.Close()
+}
+
+func initHttps() {
+	var err error
+	cert, err = os.ReadFile("./cert.pem")
+	if err != nil {
+		if os.IsNotExist(err) {
+			genSSL()
+			initHttps()
+			return
+		}
+		panic(err)
+	}
+	key, err = os.ReadFile("./key.pem")
+	if err != nil {
+		panic(err)
+	}
 }

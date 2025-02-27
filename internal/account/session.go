@@ -13,14 +13,15 @@ import (
 	"net"
 	"net/http"
 	"net/url"
-	"nonamevote/internal/codec"
-	"nonamevote/internal/data"
 	"os"
 	"slices"
 	"strings"
 	"time"
 	"unsafe"
 
+	"gitee.com/qiulaidongfeng/nonamevote/internal/codec"
+	"gitee.com/qiulaidongfeng/nonamevote/internal/config"
+	"gitee.com/qiulaidongfeng/nonamevote/internal/data"
 	"github.com/gin-gonic/gin"
 	"github.com/maxmind/mmdbinspect/pkg/mmdbinspect"
 	"github.com/oschwald/maxminddb-golang"
@@ -101,7 +102,11 @@ func (s *Session) Check(ctx *gin.Context, cookie *http.Cookie) (bool, error) {
 var findIpMode = 1
 
 var mmdb_db = func() *maxminddb.Reader {
-	db, err := mmdbinspect.OpenDB("country_asn.mmdb")
+	prefix := ""
+	if config.Test {
+		prefix = "../"
+	}
+	db, err := mmdbinspect.OpenDB(prefix + "country_asn.mmdb")
 	if err != nil {
 		panic(err)
 	}

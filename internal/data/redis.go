@@ -6,8 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"nonamevote/internal/config"
-	"nonamevote/internal/run"
+
 	"reflect"
 	"strconv"
 	"strings"
@@ -15,6 +14,8 @@ import (
 	"time"
 	"unsafe"
 
+	"gitee.com/qiulaidongfeng/nonamevote/internal/config"
+	"gitee.com/qiulaidongfeng/nonamevote/internal/run"
 	"github.com/redis/go-redis/v9"
 )
 

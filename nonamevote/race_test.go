@@ -1,4 +1,4 @@
-package main
+package nonamevote
 
 import (
 	"fmt"
@@ -6,9 +6,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"nonamevote/internal/config"
-	"nonamevote/internal/data"
-	"nonamevote/internal/vote"
 	"os"
 	"strconv"
 	"strings"
@@ -16,6 +13,10 @@ import (
 	"sync/atomic"
 	"testing"
 	"unsafe"
+
+	"gitee.com/qiulaidongfeng/nonamevote/internal/config"
+	"gitee.com/qiulaidongfeng/nonamevote/internal/data"
+	"gitee.com/qiulaidongfeng/nonamevote/internal/vote"
 )
 
 const n = 500
@@ -87,7 +88,7 @@ func TestRace(t *testing.T) {
 		}
 
 		w := httptest.NewRecorder()
-		s.Handler().ServeHTTP(w, req1)
+		S.Handler().ServeHTTP(w, req1)
 
 		resp := w.Result()
 
@@ -136,7 +137,7 @@ func sendRequest(t *testing.T, wg *sync.WaitGroup, method string, path string, f
 				form(req, &req.PostForm)
 			}
 			w := httptest.NewRecorder()
-			s.Handler().ServeHTTP(w, req)
+			S.Handler().ServeHTTP(w, req)
 			b, _ := io.ReadAll(w.Body)
 			s := unsafe.String(unsafe.SliceData(b), len(b))
 			if w.Code != code || (check != nil && !check(s)) {

@@ -2,11 +2,12 @@ package codec_test
 
 import (
 	"net/url"
-	"nonamevote/internal/account"
-	. "nonamevote/internal/codec"
 	"reflect"
 	"testing"
 	"time"
+
+	"gitee.com/qiulaidongfeng/nonamevote/internal/account"
+	. "gitee.com/qiulaidongfeng/nonamevote/internal/codec"
 )
 
 func TestCodeSession(t *testing.T) {

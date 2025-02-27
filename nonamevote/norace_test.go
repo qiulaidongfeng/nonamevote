@@ -1,14 +1,15 @@
 //go:build !race
 
-package main
+package nonamevote
 
 import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"nonamevote/internal/account"
 	"testing"
 	"time"
+
+	"gitee.com/qiulaidongfeng/nonamevote/internal/account"
 
 	"github.com/pquerna/otp"
 	"github.com/pquerna/otp/totp"

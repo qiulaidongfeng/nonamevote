@@ -1,4 +1,4 @@
-package main
+package nonamevote
 
 import (
 	"crypto/rand"
@@ -6,11 +6,6 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"os"
-)
-
-var (
-	pubkey  *rsa.PublicKey
-	privkey *rsa.PrivateKey
 )
 
 func initRSA() {

@@ -1,4 +1,4 @@
-package main
+package nonamevote
 
 import (
 	"crypto/rand"
@@ -6,14 +6,15 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"nonamevote/internal/account"
-	"nonamevote/internal/data"
-	"nonamevote/internal/vote"
 	"strconv"
 	"sync"
 	"testing"
 	"time"
 
+	"gitee.com/qiulaidongfeng/nonamevote/internal/account"
+	"gitee.com/qiulaidongfeng/nonamevote/internal/config"
+	"gitee.com/qiulaidongfeng/nonamevote/internal/data"
+	"gitee.com/qiulaidongfeng/nonamevote/internal/vote"
 	"github.com/gin-gonic/gin"
 	"github.com/pquerna/otp"
 	"github.com/pquerna/otp/totp"
@@ -100,7 +101,7 @@ func benchmark(b *testing.B, req *http.Request, f func(*http.Request)) {
 			if f != nil {
 				f(req)
 			}
-			s.Handler().ServeHTTP(w, req)
+			S.Handler().ServeHTTP(w, req)
 			if w.Code != 200 {
 				b.Fail()
 				bs, err := io.ReadAll(w.Body)
@@ -116,6 +117,7 @@ func benchmark(b *testing.B, req *http.Request, f func(*http.Request)) {
 func test_init() {
 	account.Test = true
 	data.Test = true
+	config.Test = true
 	k, err := account.NewUser("k")
 	if err != nil {
 		panic(err)
@@ -126,8 +128,8 @@ func test_init() {
 	k.VotedPath = append(k.VotedPath, "/vote/k")
 	//TODO:优化
 	account.UserDb.AddKV("k", k)
-	s = gin.New()
-	Init()
+	S = gin.New()
+	Handle(S)
 	cv = logink(nil)
 	_, add := vote.Db.Add(&vote.Info{
 		Path:      "/vote/k",
@@ -153,7 +155,7 @@ func logink(t testing.TB) string {
 	}
 
 	w := httptest.NewRecorder()
-	s.Handler().ServeHTTP(w, req)
+	S.Handler().ServeHTTP(w, req)
 
 	resp := w.Result()
 

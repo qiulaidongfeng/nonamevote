@@ -2,8 +2,10 @@ package data
 
 import (
 	"encoding/json"
-	"nonamevote/internal/config"
-	"nonamevote/internal/run"
+
+	"gitee.com/qiulaidongfeng/nonamevote/internal/config"
+	"gitee.com/qiulaidongfeng/nonamevote/internal/run"
+
 	"os"
 	"sync"
 	"sync/atomic"

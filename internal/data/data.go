@@ -1,6 +1,6 @@
 package data
 
-import "nonamevote/internal/config"
+import "gitee.com/qiulaidongfeng/nonamevote/internal/config"
 
 type Db[T any] interface {
 	Load()

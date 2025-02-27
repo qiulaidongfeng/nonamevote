@@ -1,4 +1,4 @@
-module nonamevote
+module gitee.com/qiulaidongfeng/nonamevote
 
 go 1.23
 

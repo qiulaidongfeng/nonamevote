@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"os"
 	"sync/atomic"
 
 	"github.com/fsnotify/fsnotify"
@@ -10,11 +11,15 @@ import (
 
 var v *viper.Viper
 
+var Test bool = os.Getenv("TEST") != ""
+
 func newv() *viper.Viper {
 	v := viper.New()
-	v.SetConfigFile("config.ini")
-	v.AddConfigPath("./")
-
+	prefix := ""
+	if Test {
+		prefix = "../"
+	}
+	v.SetConfigFile(prefix + "config.ini")
 	v.OnConfigChange(func(e fsnotify.Event) {
 		loadConfig()
 		fmt.Println("Config file changed:", e.Name)

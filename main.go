@@ -9,8 +9,6 @@ import (
 	"os/signal"
 	_ "time/tzdata"
 
-	"gitee.com/qiulaidongfeng/nonamevote/internal/account"
-	"gitee.com/qiulaidongfeng/nonamevote/internal/vote"
 	"gitee.com/qiulaidongfeng/nonamevote/nonamevote"
 )
 
@@ -29,10 +27,7 @@ func main() {
 		if err != nil {
 			slog.Error("", "err", err)
 		}
-		account.SessionDb.Save()
-		account.UserDb.Save()
-		vote.Db.Save()
-		vote.NameDb.Save()
+		nonamevote.Close()
 		close(end)
 		fmt.Println("关机完成")
 	}()

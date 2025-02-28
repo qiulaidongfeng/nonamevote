@@ -11,6 +11,7 @@ import (
 	"unsafe"
 
 	"gitee.com/qiulaidongfeng/nonamevote/internal/account"
+	"gitee.com/qiulaidongfeng/nonamevote/internal/vote"
 	"github.com/gin-gonic/gin"
 	"github.com/pquerna/otp"
 )
@@ -65,4 +66,11 @@ func addSession(ctx *gin.Context, user *account.User) {
 	account.UserDb.Updata(user.Name, old1, "Session", user.Session)
 	//TODO:优化使用HIncrBy
 	account.UserDb.Updata(user.Name, old2, "SessionIndex", user.SessionIndex)
+}
+
+func Close() {
+	account.SessionDb.Save()
+	account.UserDb.Save()
+	vote.Db.Save()
+	vote.NameDb.Save()
 }

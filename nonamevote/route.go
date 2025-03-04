@@ -210,4 +210,13 @@ func Handle(s *gin.Engine) {
 		ret = fmt.Sprintf(ret, strings.Join([]string{"https://", ctx.Request.Host, path}, ""))
 		ctx.Data(200, "text/html", unsafe.Slice(unsafe.StringData(ret), len(ret)))
 	})
+	s.GET("/robots.txt", func(ctx *gin.Context) {
+		ctx.String(200, rebots)
+	})
 }
+
+const rebots = `
+User-agent: *
+Disallow: /exit
+Disallow: /showQRCode
+`

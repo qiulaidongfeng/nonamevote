@@ -13,7 +13,8 @@ type Db[T any] interface {
 	AddIpCount(ip string) (r int64)
 	Changed()
 	Updata(key string, old any, field string, v any) (ok bool)
-	IncOption(key string, i int)
+	IncOption(key string, i int, old any, v any) (ok bool)
+	Clear()
 }
 
 var _ Db[any] = (*OsDb[any])(nil)
@@ -30,35 +31,30 @@ const (
 func NewDb[T any](typ int, key func(T) string) Db[T] {
 	host, path := config.GetRedis()
 	os := config.GetDbMode() == "os"
+	mysql := config.GetDbMode() == "mysql-redis"
 	file := ""
-	db := 0
 	switch typ {
 	case Ip:
 	case User:
 		file = "./user"
-		db = 1
 	case Session:
 		file = "./session"
-		db = 2
 	case Vote:
 		file = "./vote"
-		db = 3
 	case VoteName:
 		file = "./votename"
-		db = 4
 	}
 	if os {
-		r := NewOsDb[T](file, key)
-		if typ == Ip {
-			r.ipDb = true
-		}
-		return r
+		return NewOsDb(file, key)
 	}
-	r := NewRedisDb[T](host, path, db, key)
 	if typ == Ip {
-		r.ipDb = true
+		return NewRedisDb(host, path, typ, key)
 	}
-	return r
+	if mysql {
+		user, password, addr := config.GetDsnInfo()
+		return NewMysqlDb(user, password, addr, typ, key)
+	}
+	return NewRedisDb(host, path, typ, key)
 }
 
 var Test bool

@@ -24,10 +24,14 @@ type Info struct {
 	Name      string
 	End       time.Time
 	Introduce string
-	Path      string
-	Option    []Option
-	Comment   []string
-	Lock      sync.Locker `json:"-"`
+	Path      string `gorm:"primaryKey"`
+	Option    data.All[Option]
+	Comment   data.All[string]
+	Lock      sync.Locker `json:"-" gorm:"-:all"`
+}
+
+func (*Info) TableName() string {
+	return "voteinfo"
 }
 
 type Option struct {
@@ -117,6 +121,7 @@ func ParserCreateVote(ctx *gin.Context) (*Info, error) {
 		//TODO:修复这里的竞态条件
 		//如果有两个同名投票，同时执行到这里，只有一个会被记录
 		n = new(NameAndPath)
+		n.Name = ret.Name
 		n.Lock = new(sync.Mutex)
 		n.Path = append(n.Path, path)
 		NameDb.AddKV(ret.Name, n)
@@ -145,12 +150,17 @@ var loc = func() *time.Location {
 }()
 
 type NameAndPath struct {
-	Path []string
-	Lock sync.Locker `json:"-"`
+	Name string `gorm:"primaryKey"`
+	Path data.All[string]
+	Lock sync.Locker `json:"-" gorm:"-:all"`
+}
+
+func (*NameAndPath) TableName() string {
+	return "votenames"
 }
 
 var Db = data.NewDb(data.Vote, func(i *Info) string { return i.Path })
-var NameDb = data.NewDb[*NameAndPath](data.VoteName, nil)
+var NameDb = data.NewDb(data.VoteName, func(n *NameAndPath) string { return n.Name })
 
 func Init() {
 	S.GET("/vote/:num", func(ctx *gin.Context) {
@@ -276,17 +286,27 @@ func Init() {
 			ctx.String(401, "投票失败")
 			return
 		}
-		Db.Changed()
-		v.Option[opt].GotNum++ //TODO:研究删除这一行
-		Db.IncOption(path, opt)
-
 		for {
 			old := slices.Clone(user.VotedPath)
-			user.VotedPath = append(user.VotedPath, v.Path)
+			user.VotedPath = append(user.VotedPath, path)
 			if account.UserDb.Updata(user.Name, old, "VotedPath", user.VotedPath) {
 				break
 			}
 			user = account.UserDb.Find(se.Name)
+			if slices.Contains(user.VotedPath, path) {
+				ctx.String(401, "投票失败：因为已经投过票了")
+				return
+			}
+		}
+
+		Db.Changed()
+		for {
+			old := slices.Clone(v.Option)
+			v.Option[opt].GotNum++
+			if Db.IncOption(path, opt, old, v.Option) {
+				break
+			}
+			v = Db.Find(path)
 		}
 		ctx.String(200, "投票成功")
 	})

@@ -37,6 +37,9 @@ var config = struct {
 	expiration, maxcount atomic.Int64
 	link                 atomic.Pointer[string]
 	mode                 atomic.Pointer[string]
+	mysqluser            atomic.Pointer[string]
+	mysqlpassword        atomic.Pointer[string]
+	mysqladdr            atomic.Pointer[string]
 }{}
 
 func loadConfig() {
@@ -46,6 +49,9 @@ func loadConfig() {
 	config.maxcount.Store(v.GetInt64("ip_limit.maxcount"))
 	config.link.Store(ptr(v.GetString("link.path")))
 	config.mode.Store(ptr(v.GetString("db.mode")))
+	config.mysqluser.Store(ptr(v.GetString("mysql.user")))
+	config.mysqlpassword.Store(ptr(v.GetString("mysql.password")))
+	config.mysqladdr.Store(ptr(v.GetString("mysql.addr")))
 }
 
 func ptr(v string) *string {
@@ -77,4 +83,8 @@ func GetLink() string {
 
 func GetDbMode() string {
 	return *config.mode.Load()
+}
+
+func GetDsnInfo() (user, password, addr string) {
+	return *config.mysqluser.Load(), *config.mysqlpassword.Load(), *config.mysqladdr.Load()
 }

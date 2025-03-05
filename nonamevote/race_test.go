@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"os"
+	"reflect"
 	"strconv"
 	"strings"
 	"sync"
@@ -14,6 +15,7 @@ import (
 	"testing"
 	"unsafe"
 
+	"gitee.com/qiulaidongfeng/nonamevote/internal/account"
 	"gitee.com/qiulaidongfeng/nonamevote/internal/config"
 	"gitee.com/qiulaidongfeng/nonamevote/internal/data"
 	"gitee.com/qiulaidongfeng/nonamevote/internal/vote"
@@ -149,29 +151,36 @@ func sendRequest(t *testing.T, wg *sync.WaitGroup, method string, path string, f
 }
 
 func TestMain(m *testing.M) {
-	if config.GetDbMode() == "redis" {
-		for _, v := range []int{data.Ip, data.Session, data.User, data.Vote, data.VoteName} {
-			d := data.NewDb[int64](v, nil)
+	if config.GetDbMode() != "os" {
+		for _, v := range []any{account.UserDb, account.SessionDb, vote.Db, vote.NameDb} {
 			have := false
-			func() {
-				defer func() {
-					if err := recover(); err != nil {
-						//可能会有类型不对导致的panic,说明数据库有值
-						have = true
-					}
-				}()
-				d.Data(func(s string, i int64) bool {
+			f := reflect.ValueOf(v).MethodByName("Data")
+			yield := reflect.MakeFunc(f.Type().In(0), func(args []reflect.Value) (results []reflect.Value) {
+				s := args[0].Interface().(string)
+				if s != "" {
 					have = true
-					return false
-				})
-			}()
+					return []reflect.Value{reflect.ValueOf(false)}
+				}
+				return []reflect.Value{reflect.ValueOf(true)}
+			})
+			f.Call([]reflect.Value{yield})
 			if have {
-				fmt.Println("在redis模式，测试用的数据库应该是空的")
+				fmt.Println("在非os模式，测试用的数据库应该是空的")
 				os.Exit(2)
 			}
 		}
 	}
+	defer func() {
+		//让测试数据库清空
+		if config.GetDbMode() != "os" {
+			data.IpCount.Clear()
+			account.SessionDb.Clear()
+			account.UserDb.Clear()
+			vote.Db.Clear()
+			vote.NameDb.Clear()
+		}
+	}()
 	test_init()
 	m.Run()
-	data.NewDb[int64](data.Ip, nil).Save() //让测试数据库清空
+
 }

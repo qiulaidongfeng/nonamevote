@@ -24,7 +24,7 @@ type RedisDb[T any] struct {
 	r       redisDb
 	key     func(T) string
 	changed func()
-	ipDb    bool
+	db      int
 }
 
 type redisDb struct {
@@ -41,7 +41,7 @@ func NewRedisDb[T any](host string, port string, DB int, key func(T) string) *Re
 		WriteTimeout: 60 * time.Second,
 		DB:           DB,
 	})
-	r := &RedisDb[T]{rdb: rdb, key: key}
+	r := &RedisDb[T]{rdb: rdb, key: key, db: DB}
 	r.Load()
 	r.changed = run.Ticker(func() {
 		r.Save()
@@ -50,8 +50,7 @@ func NewRedisDb[T any](host string, port string, DB int, key func(T) string) *Re
 }
 
 func (r *RedisDb[T]) Load() {
-	//只有投票数据库需要这里
-	if r.key != nil {
+	if r.db == Vote {
 		var v int64
 		for i := range 10 {
 			c := r.rdb.Get(context.Background(), "i")
@@ -76,11 +75,7 @@ func (r *RedisDb[T]) Load() {
 	}
 }
 func (r *RedisDb[T]) Save() {
-	if Test {
-		r.rdb.FlushAll(context.Background())
-	}
-	//只有投票数据库需要这里
-	if r.key != nil {
+	if r.db == Vote {
 		for i := range 10 {
 			c := r.rdb.Set(context.Background(), "i", atomic.LoadInt64(&r.r.i), 0)
 			val, err := c.Result()
@@ -179,7 +174,7 @@ func (r *RedisDb[T]) AddKV(k string, v T) {
 }
 
 func (r *RedisDb[T]) Find(k string) T {
-	if r.ipDb {
+	if r.db == Ip {
 		c := r.rdb.Get(context.Background(), k)
 		r, _ := c.Result()
 		var ret T
@@ -300,16 +295,21 @@ var mu fackLock
 
 func (r *RedisDb[T]) Data(yield func(string, T) bool) {
 	var cursor uint64
+	i := 0
 	for {
 		var keys []string
 		var err error
 		keys, cursor, err = r.rdb.Scan(context.Background(), cursor, "*", 100).Result()
 		if err != nil {
+			i++
+			if i == 9 {
+				panic(err)
+			}
 			slog.Error("", "err", err)
 			continue
 		}
 		for i := range keys {
-			if keys[i] == "i" && r.key != nil {
+			if keys[i] == "i" && r.db == Vote {
 				continue
 			}
 			v := r.Find(keys[i])
@@ -407,18 +407,32 @@ func (r *RedisDb[T]) Updata(key string, old any, field string, v any) (ok bool) 
 	return err == nil
 }
 
-func (r *RedisDb[T]) IncOption(key string, i int) {
+func (r *RedisDb[T]) IncOption(key string, i int, _, _ any) (ok bool) {
 	r.Changed()
 	field := "Option_num" + strconv.Itoa(i)
 	for i := range 10 {
 		c := r.rdb.HIncrBy(context.Background(), key, field, 1)
 		_, err := c.Result()
 		if err == nil {
-			return
+			return true
 		}
 		slog.Error("", "err", err)
 		if i == 9 {
 			panic(err)
 		}
 	}
+	return true
+}
+
+// Inc 用于生成自增值
+func (r *RedisDb[T]) Inc() int {
+	i, err := r.rdb.Incr(context.Background(), "i").Result()
+	if err != nil {
+		slog.Error("", "err", err)
+	}
+	return int(i)
+}
+
+func (r *RedisDb[T]) Clear() {
+	r.rdb.FlushDB(context.Background())
 }

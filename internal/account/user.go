@@ -2,6 +2,9 @@ package account
 
 import (
 	"crypto/rand"
+	"database/sql/driver"
+	"encoding/json"
+	"errors"
 	"fmt"
 
 	"gitee.com/qiulaidongfeng/nonamevote/internal/data"
@@ -9,11 +12,28 @@ import (
 )
 
 type User struct {
-	Name         string
+	Name         string `gorm:"primaryKey"`
 	TotpURL      string
-	SessionIndex uint8
-	Session      [3][16]byte
-	VotedPath    []string
+	SessionIndex uint8 `gorm:"column:sessionindex"`
+	Session      allSession
+	VotedPath    data.All[string] `gorm:"column:votedpath"`
+}
+
+type allSession [3][16]byte
+
+func (a *allSession) Scan(value any) error {
+	bytes, ok := value.([]byte)
+	if !ok {
+		return errors.New(fmt.Sprint("Failed to unmarshal JSONB value:", value))
+	}
+
+	err := json.Unmarshal(bytes, a)
+	return err
+}
+
+// Value return json value, implement driver.Valuer interface
+func (a allSession) Value() (driver.Value, error) {
+	return json.Marshal(a)
 }
 
 func NewUser(Name string) (*User, error) {
@@ -36,4 +56,4 @@ func NewUser(Name string) (*User, error) {
 	return &user, nil
 }
 
-var UserDb = data.NewDb[*User](data.User, nil)
+var UserDb = data.NewDb(data.User, func(u *User) string { return u.Name })

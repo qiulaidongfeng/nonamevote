@@ -161,4 +161,7 @@ func (t *OsDb[T]) AddIpCount(ip string) (r int64) {
 func (t *OsDb[T]) Updata(key string, old any, field string, v any) (ok bool) { return true }
 
 // 为实现接口而写，实际无效果
-func (t *OsDb[T]) IncOption(key string, i int) {}
+func (t *OsDb[T]) IncOption(key string, i int, old any, v any) (ok bool) { return true }
+
+// 为实现接口而写，实际无效果
+func (t *OsDb[T]) Clear() {}

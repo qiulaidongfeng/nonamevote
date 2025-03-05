@@ -2,10 +2,12 @@ package nonamevote
 
 import (
 	"crypto/rand"
+	"encoding/base64"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"slices"
 	"strconv"
 	"sync"
 	"testing"
@@ -63,8 +65,8 @@ func BenchmarkSearch(b *testing.B) {
 	defer func() { vote.Db = origin1; vote.NameDb = origin2 }()
 	vote.Db = data.NewDb[*vote.Info](data.Vote, nil)
 	vote.Db.AddKV("/vote/1", &vote.Info{Lock: new(sync.Mutex)})
-	vote.NameDb = data.NewDb[*vote.NameAndPath](data.VoteName, nil)
-	vote.NameDb.AddKV("1", &vote.NameAndPath{Path: []string{"/vote/1"}, Lock: new(sync.Mutex)})
+	vote.NameDb = data.NewDb[*vote.NameAndPath](data.VoteName, func(n *vote.NameAndPath) string { return n.Name })
+	vote.NameDb.AddKV("1", &vote.NameAndPath{Name: "1", Path: []string{"/vote/1"}, Lock: new(sync.Mutex)})
 
 	benchmark(b, req, func(req *http.Request) {
 		req.PostForm = make(url.Values)
@@ -80,10 +82,10 @@ func BenchmarkAllVote(b *testing.B) {
 	origin2 := vote.NameDb
 	defer func() { vote.Db = origin1; vote.NameDb = origin2 }()
 	vote.Db = data.NewOsDb[*vote.Info]("", nil)
-	vote.NameDb = data.NewOsDb[*vote.NameAndPath]("", nil)
+	vote.NameDb = data.NewOsDb[*vote.NameAndPath]("", func(n *vote.NameAndPath) string { return n.Name })
 	for i := range 4 {
 		vote.Db.AddKV("/vote/"+strconv.Itoa(i), &vote.Info{Lock: new(sync.Mutex)})
-		vote.NameDb.AddKV(strconv.Itoa(i), &vote.NameAndPath{Path: []string{"/vote/" + strconv.Itoa(i)}, Lock: new(sync.Mutex)})
+		vote.NameDb.AddKV(strconv.Itoa(i), &vote.NameAndPath{Name: strconv.Itoa(i), Path: []string{"/vote/" + strconv.Itoa(i)}, Lock: new(sync.Mutex)})
 	}
 	benchmark(b, req, nil)
 }
@@ -125,9 +127,11 @@ func test_init() {
 	if account.UserDb.Find("k").Name != "k" {
 		panic("test user generate fail")
 	}
+	old := slices.Clone(k.VotedPath)
 	k.VotedPath = append(k.VotedPath, "/vote/k")
-	//TODO:优化
-	account.UserDb.AddKV("k", k)
+	if !account.UserDb.Updata("k", old, "VotedPath", k.VotedPath) {
+		panic("update fail")
+	}
 	S = gin.New()
 	Handle(S)
 	cv = logink(nil)
@@ -139,7 +143,7 @@ func test_init() {
 		Lock:      new(sync.Mutex),
 	})
 	add()
-	vote.NameDb.AddKV("k", &vote.NameAndPath{Path: []string{"/vote/k"}, Lock: new(sync.Mutex)})
+	vote.NameDb.AddKV("k", &vote.NameAndPath{Name: "k", Path: []string{"/vote/k"}, Lock: new(sync.Mutex)})
 	gin.SetMode(gin.ReleaseMode)
 }
 
@@ -177,5 +181,5 @@ func logink(t testing.TB) string {
 func randStr() string {
 	b := make([]byte, 16)
 	rand.Reader.Read(b)
-	return string(b)
+	return base64.StdEncoding.EncodeToString(b)
 }

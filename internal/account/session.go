@@ -30,11 +30,11 @@ import (
 var Test = false
 
 type Session struct {
-	Value      string
-	Ip         IPInfo `json:"-"`
+	Value      string `gorm:"primaryKey;type:char(64)"`
+	Ip         IPInfo `json:"-" gorm:"-:all"`
 	CreateTime time.Time
-	Os         string `json:"-"`
-	Name       string `json:"-"`
+	Os         string `json:"-" gorm:"-:all"`
+	Name       string `json:"-" gorm:"-:all"`
 }
 
 func NewSession(ctx *gin.Context, Name string) Session {
@@ -174,7 +174,7 @@ func getOS(ctx *gin.Context) string {
 	return getOperatingSystem(userAgent)
 }
 
-var SessionDb = data.NewDb[Session](data.Session, nil)
+var SessionDb = data.NewDb(data.Session, func(s Session) string { return s.Value })
 
 const SessionMaxAge = 12 * 60 * 60 //12小时
 

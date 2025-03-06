@@ -88,20 +88,19 @@ func (m *MysqlDb[T]) Data(yield func(string, T) bool) {
 	defer rows.Close()
 
 	for rows.Next() {
-		model, oldt, v := getModel[T]()
+		model, oldt, _ := getModel[T]()
 		if err := m.db.ScanRows(rows, model); err != nil {
 			panic(err)
 		}
-		tmp := toT[T](oldt, v, model)
+		tmp := toT[T](oldt, model)
 		if !yield(m.key(tmp), tmp) {
 			break
 		}
 	}
 }
 
-func toT[T any](oldt reflect.Type, v reflect.Value, model any) (tmp T) {
+func toT[T any](oldt reflect.Type, model any) (tmp T) {
 	if oldt.Kind() == reflect.Pointer { //if t like *Seesion
-		v = v.Elem()
 		tmp = model.(T)
 	} else {
 		tmp = *(model.(*T))
@@ -124,7 +123,7 @@ func (m *MysqlDb[T]) find(db *gorm.DB, k string) (ret T) {
 	if result.RowsAffected == 0 {
 		return *new(T)
 	}
-	return toT[T](oldt, v, model)
+	return toT[T](oldt, model)
 }
 
 func (m *MysqlDb[T]) Delete(k string) {

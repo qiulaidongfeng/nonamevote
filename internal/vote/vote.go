@@ -27,7 +27,7 @@ type Info struct {
 	Path      string `gorm:"primaryKey"`
 	Option    data.All[Option]
 	Comment   data.All[string]
-	Lock      sync.Locker `json:"-" gorm:"-:all"`
+	Lock      sync.Mutex `json:"-" gorm:"-:all"`
 }
 
 func (*Info) TableName() string {
@@ -41,7 +41,7 @@ type Option struct {
 
 // ParserCreateVote 从post请求表单中获取创建投票的信息
 func ParserCreateVote(ctx *gin.Context) (*Info, error) {
-	var ret = &Info{Lock: new(sync.Mutex)}
+	var ret = &Info{}
 	name := ctx.PostForm("name")
 	if name == "" {
 		return ret, errors.New("投票名不能为空")
@@ -122,7 +122,6 @@ func ParserCreateVote(ctx *gin.Context) (*Info, error) {
 		//如果有两个同名投票，同时执行到这里，只有一个会被记录
 		n = new(NameAndPath)
 		n.Name = ret.Name
-		n.Lock = new(sync.Mutex)
 		n.Path = append(n.Path, path)
 		NameDb.AddKV(ret.Name, n)
 	} else {
@@ -152,7 +151,7 @@ var loc = func() *time.Location {
 type NameAndPath struct {
 	Name string `gorm:"primaryKey"`
 	Path data.All[string]
-	Lock sync.Locker `json:"-" gorm:"-:all"`
+	Lock sync.Mutex `json:"-" gorm:"-:all"`
 }
 
 func (*NameAndPath) TableName() string {

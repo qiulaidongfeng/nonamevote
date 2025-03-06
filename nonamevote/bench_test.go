@@ -9,7 +9,6 @@ import (
 	"net/url"
 	"slices"
 	"strconv"
-	"sync"
 	"testing"
 	"time"
 
@@ -64,9 +63,9 @@ func BenchmarkSearch(b *testing.B) {
 	origin2 := vote.NameDb
 	defer func() { vote.Db = origin1; vote.NameDb = origin2 }()
 	vote.Db = data.NewDb[*vote.Info](data.Vote, nil)
-	vote.Db.AddKV("/vote/1", &vote.Info{Lock: new(sync.Mutex)})
-	vote.NameDb = data.NewDb[*vote.NameAndPath](data.VoteName, func(n *vote.NameAndPath) string { return n.Name })
-	vote.NameDb.AddKV("1", &vote.NameAndPath{Name: "1", Path: []string{"/vote/1"}, Lock: new(sync.Mutex)})
+	vote.Db.AddKV("/vote/1", &vote.Info{})
+	vote.NameDb = data.NewDb(data.VoteName, func(n *vote.NameAndPath) string { return n.Name })
+	vote.NameDb.AddKV("1", &vote.NameAndPath{Name: "1", Path: []string{"/vote/1"}})
 
 	benchmark(b, req, func(req *http.Request) {
 		req.PostForm = make(url.Values)
@@ -82,10 +81,10 @@ func BenchmarkAllVote(b *testing.B) {
 	origin2 := vote.NameDb
 	defer func() { vote.Db = origin1; vote.NameDb = origin2 }()
 	vote.Db = data.NewOsDb[*vote.Info]("", nil)
-	vote.NameDb = data.NewOsDb[*vote.NameAndPath]("", func(n *vote.NameAndPath) string { return n.Name })
+	vote.NameDb = data.NewOsDb("", func(n *vote.NameAndPath) string { return n.Name })
 	for i := range 4 {
-		vote.Db.AddKV("/vote/"+strconv.Itoa(i), &vote.Info{Lock: new(sync.Mutex)})
-		vote.NameDb.AddKV(strconv.Itoa(i), &vote.NameAndPath{Name: strconv.Itoa(i), Path: []string{"/vote/" + strconv.Itoa(i)}, Lock: new(sync.Mutex)})
+		vote.Db.AddKV("/vote/"+strconv.Itoa(i), &vote.Info{})
+		vote.NameDb.AddKV(strconv.Itoa(i), &vote.NameAndPath{Name: strconv.Itoa(i), Path: []string{"/vote/" + strconv.Itoa(i)}})
 	}
 	benchmark(b, req, nil)
 }
@@ -140,10 +139,9 @@ func test_init() {
 		Introduce: "",
 		End:       time.Date(2100, time.April, 1, 1, 1, 1, 1, time.Local),
 		Option:    []vote.Option{{Name: "0"}},
-		Lock:      new(sync.Mutex),
 	})
 	add()
-	vote.NameDb.AddKV("k", &vote.NameAndPath{Name: "k", Path: []string{"/vote/k"}, Lock: new(sync.Mutex)})
+	vote.NameDb.AddKV("k", &vote.NameAndPath{Name: "k", Path: []string{"/vote/k"}})
 	gin.SetMode(gin.ReleaseMode)
 }
 

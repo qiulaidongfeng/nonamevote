@@ -94,10 +94,6 @@ func (m *MysqlDb[T]) Data(yield func(string, T) bool) {
 func toT[T any](oldt reflect.Type, v reflect.Value, model any) (tmp T) {
 	if oldt.Kind() == reflect.Pointer { //if t like *Seesion
 		v = v.Elem()
-		l := v.FieldByName("Lock")
-		if l.Kind() == reflect.Interface {
-			l.Set(reflect.ValueOf(mu))
-		}
 		tmp = model.(T)
 	} else {
 		tmp = *(model.(*T))

@@ -45,7 +45,9 @@ func NewDb[T any](typ int, key func(T) string) Db[T] {
 		file = "./votename"
 	}
 	if os {
-		return NewOsDb(file, key)
+		r := NewOsDb(file, key)
+		r.ipDb = typ == Ip
+		return r
 	}
 	if typ == Ip {
 		return NewRedisDb(host, path, typ, key)

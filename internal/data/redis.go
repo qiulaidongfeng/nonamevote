@@ -202,10 +202,6 @@ func (r *RedisDb[T]) Find(k string) T {
 		n := reflect.New(rv.Type().Elem())
 		result = n.Interface().(T)
 		rv = n.Elem()
-		l := rv.FieldByName("Lock")
-		if l.Kind() == reflect.Interface {
-			l.Set(reflect.ValueOf(mu))
-		}
 	} else {
 		n := reflect.New(rv.Type())
 		set = true
@@ -285,13 +281,6 @@ func grow(v reflect.Value, i int) {
 	}
 	v.Set(n)
 }
-
-type fackLock struct{}
-
-func (_ fackLock) Lock()   {}
-func (_ fackLock) Unlock() {}
-
-var mu fackLock
 
 func (r *RedisDb[T]) Data(yield func(string, T) bool) {
 	var cursor uint64

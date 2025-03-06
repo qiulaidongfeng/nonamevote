@@ -66,7 +66,7 @@ func BenchmarkSearch(b *testing.B) {
 	origin2 := vote.NameDb
 	defer func() { vote.Db = origin1; vote.NameDb = origin2 }()
 	vote.Db = data.NewDb[*vote.Info](data.Vote, nil)
-	vote.Db.AddKV("/vote/1", &vote.Info{})
+	vote.Db.AddKV("/vote/1", &vote.Info{End: time.Now()})
 	vote.NameDb = data.NewDb(data.VoteName, func(n *vote.NameAndPath) string { return n.Name })
 	vote.NameDb.AddKV("1", &vote.NameAndPath{Name: "1", Path: []string{"/vote/1"}})
 

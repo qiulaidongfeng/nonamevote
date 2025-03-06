@@ -38,6 +38,9 @@ func NewOsDb[T any](path string, key func(T) string) *OsDb[T] {
 
 func (t *OsDb[T]) Load() {
 	if Test || t.ipDb {
+		t.lock.Lock()
+		defer t.lock.Unlock()
+		t.t.M.Clear()
 		return
 	}
 	t.lock.Lock()
@@ -139,22 +142,20 @@ func (t *OsDb[T]) AddIpCount(ip string) (r int64) {
 			r = 0
 		}()
 	}
-	for {
-		v, ok := t.t.M.Load(ip)
-		if !ok {
-			p := int64(1)
-			old, load := t.t.M.Swap(ip, &p)
-			if !load {
-				time.AfterFunc(time.Duration(config.GetExpiration())*time.Second, func() {
-					t.t.M.Delete(ip)
-				})
-				return
-			}
-			v = old
+	v, ok := t.t.M.Load(ip)
+	if !ok {
+		p := int64(1)
+		old, load := t.t.M.LoadOrStore(ip, &p)
+		if !load {
+			time.AfterFunc(time.Duration(config.GetExpiration())*time.Second, func() {
+				t.t.M.Delete(ip)
+			})
+			return
 		}
-		p := v.(*int64)
-		return atomic.AddInt64(p, 1)
+		v = old
 	}
+	p := v.(*int64)
+	return atomic.AddInt64(p, 1)
 }
 
 // 为实现接口而写，实际无效果

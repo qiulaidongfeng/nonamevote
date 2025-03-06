@@ -3,10 +3,13 @@ package nonamevote
 import (
 	"crypto/rand"
 	"encoding/base64"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
+	"reflect"
 	"slices"
 	"strconv"
 	"testing"
@@ -119,6 +122,26 @@ func test_init() {
 	account.Test = true
 	data.Test = true
 	config.Test = true
+	for _, v := range []any{account.UserDb, account.SessionDb, vote.Db, vote.NameDb} {
+		v.(interface{ Load() }).Load()
+	}
+	for _, v := range []any{account.UserDb, account.SessionDb, vote.Db, vote.NameDb} {
+		have := false
+		f := reflect.ValueOf(v).MethodByName("Data")
+		yield := reflect.MakeFunc(f.Type().In(0), func(args []reflect.Value) (results []reflect.Value) {
+			s := args[0].Interface().(string)
+			if s != "" {
+				have = true
+				return []reflect.Value{reflect.ValueOf(false)}
+			}
+			return []reflect.Value{reflect.ValueOf(true)}
+		})
+		f.Call([]reflect.Value{yield})
+		if have {
+			fmt.Println("测试用的数据库应该是空的")
+			os.Exit(2)
+		}
+	}
 	k, err := account.NewUser("k")
 	if err != nil {
 		panic(err)

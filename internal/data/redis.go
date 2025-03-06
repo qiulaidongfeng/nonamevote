@@ -10,25 +10,17 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
-	"sync/atomic"
 	"time"
 	"unsafe"
 
 	"gitee.com/qiulaidongfeng/nonamevote/internal/config"
-	"gitee.com/qiulaidongfeng/nonamevote/internal/run"
 	"github.com/redis/go-redis/v9"
 )
 
 type RedisDb[T any] struct {
-	rdb     *redis.Client
-	r       redisDb
-	key     func(T) string
-	changed func()
-	db      int
-}
-
-type redisDb struct {
-	i int64
+	rdb *redis.Client
+	key func(T) string
+	db  int
 }
 
 var IpCount = NewDb[int](Ip, nil)
@@ -42,57 +34,11 @@ func NewRedisDb[T any](host string, port string, DB int, key func(T) string) *Re
 		DB:           DB,
 	})
 	r := &RedisDb[T]{rdb: rdb, key: key, db: DB}
-	r.Load()
-	r.changed = run.Ticker(func() {
-		r.Save()
-	})
 	return r
 }
 
-func (r *RedisDb[T]) Load() {
-	if r.db == Vote {
-		var v int64
-		for i := range 10 {
-			c := r.rdb.Get(context.Background(), "i")
-			val, err := c.Result()
-			if err == nil {
-				i, err := strconv.Atoi(val)
-				if err != nil {
-					panic(err)
-				}
-				v = int64(i)
-				break
-			}
-			if err == redis.Nil {
-				return
-			}
-			slog.Error(val, "err", err)
-			if i == 9 {
-				panic(err)
-			}
-		}
-		r.r.i = v
-	}
-}
-func (r *RedisDb[T]) Save() {
-	if r.db == Vote {
-		for i := range 10 {
-			c := r.rdb.Set(context.Background(), "i", atomic.LoadInt64(&r.r.i), 0)
-			val, err := c.Result()
-			if err == nil {
-				break
-			}
-			slog.Error(val, "err", err)
-			if i == 9 {
-				panic(err)
-			}
-		}
-	}
-}
-
 func (r *RedisDb[T]) Add(v T) (int, func()) {
-	r.Changed()
-	return int(atomic.AddInt64(&r.r.i, 1)), func() {
+	return r.Inc(), func() {
 		rv := reflect.ValueOf(v)
 		rt := reflect.TypeFor[T]()
 		if rv.Kind() == reflect.Pointer {
@@ -146,7 +92,6 @@ func add(h map[string]any, fv reflect.Value, ft reflect.StructField) {
 }
 
 func (r *RedisDb[T]) AddKV(k string, v T) (ok bool) {
-	r.Changed()
 	rv := reflect.ValueOf(v)
 	rt := reflect.TypeFor[T]()
 	if rv.Kind() == reflect.Pointer {
@@ -332,7 +277,6 @@ func (r *RedisDb[T]) Data(yield func(string, T) bool) {
 }
 
 func (r *RedisDb[T]) Delete(k string) {
-	r.Changed()
 	for i := range 10 {
 		c := r.rdb.Del(context.Background(), k)
 		code, err := c.Result()
@@ -346,17 +290,12 @@ func (r *RedisDb[T]) Delete(k string) {
 	}
 }
 
-func (r *RedisDb[T]) Changed() {
-	r.changed()
-}
-
 func (r *RedisDb[T]) AddIpCount(ip string) (ret int64) {
 	if Test {
 		defer func() {
 			ret = 0
 		}()
 	}
-	r.Changed()
 	i, err := r.rdb.Incr(context.Background(), ip).Result()
 	if i == 1 {
 		err = r.rdb.Expire(context.Background(), ip, time.Duration(config.GetExpiration())*time.Second).Err()
@@ -373,7 +312,6 @@ func (r *RedisDb[T]) AddIpCount(ip string) (ret int64) {
 }
 
 func (r *RedisDb[T]) Updata(key string, old any, field string, v any) (ok bool) {
-	r.Changed()
 	switch field {
 	case "SessionIndex":
 		old = strconv.Itoa(int(old.(uint8)))
@@ -416,7 +354,6 @@ func (r *RedisDb[T]) Updata(key string, old any, field string, v any) (ok bool) 
 }
 
 func (r *RedisDb[T]) IncOption(key string, i int, _, _ any) (ok bool) {
-	r.Changed()
 	field := "Option_num" + strconv.Itoa(i)
 	for i := range 10 {
 		c := r.rdb.HIncrBy(context.Background(), key, field, 1)
@@ -444,3 +381,12 @@ func (r *RedisDb[T]) Inc() int {
 func (r *RedisDb[T]) Clear() {
 	r.rdb.FlushDB(context.Background())
 }
+
+// 为实现接口而写，实际无效果
+func (r *RedisDb[T]) Load() {}
+
+// 为实现接口而写，实际无效果
+func (r *RedisDb[T]) Save() {}
+
+// 为实现接口而写，实际无效果
+func (r *RedisDb[T]) Changed() {}

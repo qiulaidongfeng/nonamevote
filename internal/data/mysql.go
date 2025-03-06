@@ -127,8 +127,9 @@ func (m *MysqlDb[T]) find(db *gorm.DB, k string) (ret T) {
 }
 
 func (m *MysqlDb[T]) Delete(k string) {
-	if err := m.db.Raw("delete from ? where ?=?", tablename(m.dbenum), primary(m.dbenum), k).Error; err != nil {
-		panic(err)
+	result := m.db.Exec(fmt.Sprintf("delete from `%s` where `%s`=?", tablename(m.dbenum), primary(m.dbenum)), k)
+	if result.Error != nil {
+		panic(result.Error)
 	}
 }
 

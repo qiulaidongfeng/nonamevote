@@ -145,7 +145,7 @@ func add(h map[string]any, fv reflect.Value, ft reflect.StructField) {
 	h[ft.Name] = fv.Interface()
 }
 
-func (r *RedisDb[T]) AddKV(k string, v T) {
+func (r *RedisDb[T]) AddKV(k string, v T) (ok bool) {
 	r.Changed()
 	rv := reflect.ValueOf(v)
 	rt := reflect.TypeFor[T]()
@@ -160,17 +160,36 @@ func (r *RedisDb[T]) AddKV(k string, v T) {
 		add(h, fv, rt.Field(i))
 	}
 
-	for i := range 10 {
-		c := r.rdb.HSet(context.Background(), k, h)
-		_, err := c.Result()
+	for i := 0; i < 9; i++ {
+		err := r.rdb.Watch(context.Background(), func(tx *redis.Tx) error {
+			i, err := tx.Exists(context.Background(), k).Result()
+			if err != nil {
+				return err
+			}
+			if i == 1 { //如果已经存在
+				return nil
+			}
+			_, err = tx.TxPipelined(context.Background(), func(p redis.Pipeliner) error {
+				return p.HSet(context.Background(), k, h).Err()
+			})
+			if err == nil {
+				ok = true
+			}
+			return err
+		}, k)
 		if err == nil {
 			break
 		}
-		slog.Error("", "err", err)
+		if err == redis.TxFailedErr {
+			i--
+		} else {
+			slog.Error("", "err", err)
+		}
 		if i == 9 {
 			panic(err)
 		}
 	}
+	return
 }
 
 func (r *RedisDb[T]) Find(k string) T {

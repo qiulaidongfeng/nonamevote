@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"gitee.com/qiulaidongfeng/nonamevote/internal/config"
+	dm "github.com/go-sql-driver/mysql"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
@@ -66,10 +67,17 @@ func (m *MysqlDb[T]) Add(v T) (int, func()) {
 	}
 }
 
-func (m *MysqlDb[T]) AddKV(k string, v T) {
-	if err := m.db.Create(v).Error; err != nil {
-		panic(err)
+func (m *MysqlDb[T]) AddKV(k string, v T) (ok bool) {
+	result := m.db.Create(v)
+	ok = true
+	if result.Error != nil {
+		if e, ok := result.Error.(*dm.MySQLError); ok && e.Number == 1062 { //如果已经存在
+			ok = false
+		} else {
+			panic(result.Error)
+		}
 	}
+	return
 }
 
 func (m *MysqlDb[T]) Data(yield func(string, T) bool) {

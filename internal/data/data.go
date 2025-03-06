@@ -6,7 +6,7 @@ type Db[T any] interface {
 	Load()
 	Save()
 	Add(v T) (int, func())
-	AddKV(key string, v T)
+	AddKV(key string, v T) (ok bool)
 	Data(yield func(string, T) bool)
 	Find(k string) T
 	Delete(k string)

@@ -106,9 +106,10 @@ func (t *OsDb[T]) Add(v T) (int, func()) {
 	return int(atomic.AddInt64(&t.t.i, 1)), func() { t.t.M.Store(t.key(v), v); t.Changed() }
 }
 
-func (t *OsDb[T]) AddKV(key string, v T) {
-	t.t.M.Store(key, v)
+func (t *OsDb[T]) AddKV(key string, v T) (ok bool) {
+	_, load := t.t.M.LoadOrStore(key, v)
 	t.Changed()
+	return !load
 }
 
 func (t *OsDb[T]) Data(yield func(string, T) bool) {

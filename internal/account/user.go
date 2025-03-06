@@ -37,10 +37,6 @@ func (a allSession) Value() (driver.Value, error) {
 }
 
 func NewUser(Name string) (*User, error) {
-	ok := UserDb.Find(Name) != nil
-	if ok {
-		return nil, fmt.Errorf("用户名 %s 已被注册", Name)
-	}
 	key, err := totp.Generate(totp.GenerateOpts{
 		Issuer:      "无记名投票",
 		AccountName: Name,
@@ -51,8 +47,9 @@ func NewUser(Name string) (*User, error) {
 		panic(err)
 	}
 	user := User{Name: Name, TotpURL: key.URL()}
-	//TODO:处理用户名突然被注册
-	UserDb.AddKV(Name, &user)
+	if !UserDb.AddKV(Name, &user) {
+		return nil, fmt.Errorf("用户名 %s 已被注册", Name)
+	}
 	return &user, nil
 }
 

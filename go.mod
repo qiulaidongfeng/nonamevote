@@ -9,6 +9,7 @@ require (
 	github.com/go-sql-driver/mysql v1.9.0
 	github.com/gorilla/feeds v1.2.0
 	github.com/maxmind/mmdbinspect v0.2.0
+	github.com/mileusna/useragent v1.3.5
 	github.com/oschwald/maxminddb-golang v1.13.1
 	github.com/pquerna/otp v1.4.0
 	github.com/redis/go-redis/v9 v9.7.1

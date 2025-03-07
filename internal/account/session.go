@@ -15,7 +15,6 @@ import (
 	"net/url"
 	"os"
 	"slices"
-	"strings"
 	"time"
 	"unsafe"
 
@@ -24,17 +23,20 @@ import (
 	"gitee.com/qiulaidongfeng/nonamevote/internal/data"
 	"github.com/gin-gonic/gin"
 	"github.com/maxmind/mmdbinspect/pkg/mmdbinspect"
+	"github.com/mileusna/useragent"
 	"github.com/oschwald/maxminddb-golang"
 )
 
 var Test = false
 
 type Session struct {
-	Value      string `gorm:"primaryKey;type:char(64)"`
-	Ip         IPInfo `json:"-" gorm:"-:all"`
-	CreateTime time.Time
-	Os         string `json:"-" gorm:"-:all"`
-	Name       string `json:"-" gorm:"-:all"`
+	Value         string `gorm:"primaryKey;type:char(64)"`
+	Ip            IPInfo `json:"-" gorm:"-:all"`
+	CreateTime    time.Time
+	Os, OsVersion string `json:"-" gorm:"-:all"`
+	Name          string `json:"-" gorm:"-:all"`
+	Device        string `json:"-" gorm:"-:all"`
+	Broswer       string `json:"-" gorm:"-:all"`
 }
 
 func NewSession(ctx *gin.Context, Name string) Session {
@@ -54,7 +56,11 @@ func NewSession(ctx *gin.Context, Name string) Session {
 			panic(err)
 		}
 	}
-	s.Os = getOS(ctx)
+	u := useragent.Parse(ctx.Request.UserAgent())
+	s.Device = u.Device
+	s.Os = u.OS
+	s.OsVersion = u.OSVersion
+	s.Broswer = u.Name
 	return s
 }
 
@@ -82,9 +88,9 @@ func (s *Session) Check(ctx *gin.Context, cookie *http.Cookie) (bool, error) {
 			return false, errors.New("IP地址在两次登录时不在同一个地区，请重新登录")
 		}
 	}
-	useros := getOS(ctx)
-	if useros != s.Os {
-		return false, nil
+	u := useragent.Parse(ctx.Request.UserAgent())
+	if u.OS != s.Os || u.Device != s.Device || u.OSVersion != s.OsVersion || u.Name != s.Broswer {
+		return false, errors.New("登录疑似存在风险，请重新登录")
 	}
 	user := UserDb.Find(s.Name)
 	if user == nil {
@@ -155,23 +161,6 @@ func getIPInfo(ip string) (IPInfo, error) {
 	}
 
 	return location, nil
-}
-
-func getOperatingSystem(userAgent string) string {
-	if strings.Contains(userAgent, "Windows") {
-		return "Windows"
-	} else if strings.Contains(userAgent, "Mac OS X") || strings.Contains(userAgent, "Macintosh") {
-		return "macOS"
-	} else if strings.Contains(userAgent, "Linux") {
-		return "Linux"
-	}
-	// 可以添加更多系统类型的检查，或返回"Unknown"
-	return "Unknown"
-}
-
-func getOS(ctx *gin.Context) string {
-	userAgent := ctx.Request.Header.Get("User-Agent")
-	return getOperatingSystem(userAgent)
 }
 
 var SessionDb = data.NewDb(data.Session, func(s Session) string { return s.Value })

@@ -3,14 +3,12 @@ package nonamevote
 import (
 	"bytes"
 	"crypto/md5"
-	"crypto/rand"
-	"crypto/rsa"
-	"crypto/sha256"
 	"image/png"
 	"io"
 	"unsafe"
 
 	"gitee.com/qiulaidongfeng/nonamevote/internal/account"
+	"gitee.com/qiulaidongfeng/nonamevote/internal/safe"
 	"gitee.com/qiulaidongfeng/nonamevote/internal/vote"
 	"github.com/gin-gonic/gin"
 	"github.com/pquerna/otp"
@@ -50,11 +48,8 @@ func addSession(ctx *gin.Context, user *account.User) {
 	//TODO:处理session value重复
 	account.SessionDb.AddKV(se.Value, se)
 	cookie := se.EnCode()
-	wc, err := rsa.EncryptOAEP(sha256.New(), rand.Reader, pubkey, unsafe.Slice(unsafe.StringData(cookie), len(cookie)), nil)
-	if err != nil {
-		panic(err)
-	}
-	ctx.SetCookie("session", unsafe.String(unsafe.SliceData(wc), len(wc)), account.SessionMaxAge, "", "", true, true)
+	wc := safe.Encrypt(cookie)
+	ctx.SetCookie("session", wc, account.SessionMaxAge, "", "", true, true)
 
 	old1 := user.Session
 	old2 := user.SessionIndex

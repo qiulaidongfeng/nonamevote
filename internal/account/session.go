@@ -3,8 +3,6 @@ package account
 import (
 	"crypto/md5"
 	"crypto/rand"
-	"crypto/rsa"
-	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -21,6 +19,7 @@ import (
 	"gitee.com/qiulaidongfeng/nonamevote/internal/codec"
 	"gitee.com/qiulaidongfeng/nonamevote/internal/config"
 	"gitee.com/qiulaidongfeng/nonamevote/internal/data"
+	"gitee.com/qiulaidongfeng/nonamevote/internal/safe"
 	"github.com/gin-gonic/gin"
 	"github.com/maxmind/mmdbinspect/pkg/mmdbinspect"
 	"github.com/mileusna/useragent"
@@ -216,14 +215,8 @@ func DecodeSession(v string) (bool, Session) {
 		slog.Error("", "err", err)
 		return false, Session{}
 	}
-	b, err := rsa.DecryptOAEP(sha256.New(), rand.Reader, Privkey, unsafe.Slice(unsafe.StringData(v), len(v)), nil)
-	if err != nil {
-		slog.Error("", "err", err)
-		return false, Session{}
-	}
+	s := safe.Decrypt(v)
 	var se Session
-	ok := se.Load(unsafe.String(&b[0], len(b)))
+	ok := se.Load(s)
 	return ok, se
 }
-
-var Privkey *rsa.PrivateKey

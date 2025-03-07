@@ -2,7 +2,6 @@ package nonamevote
 
 import (
 	"bytes"
-	"crypto/rsa"
 	"path/filepath"
 
 	"gitee.com/qiulaidongfeng/cachefs"
@@ -32,11 +31,6 @@ var (
 	cert []byte
 	key  []byte
 	S    = gin.Default()
-)
-
-var (
-	pubkey  *rsa.PublicKey
-	privkey *rsa.PrivateKey
 )
 
 var hfs = cachefs.NewHttpCacheFs(html)

@@ -1,6 +1,6 @@
 module gitee.com/qiulaidongfeng/nonamevote
 
-go 1.23.0
+go 1.24
 
 require (
 	gitee.com/qiulaidongfeng/cachefs v0.8.0
@@ -14,6 +14,7 @@ require (
 	github.com/pquerna/otp v1.4.0
 	github.com/redis/go-redis/v9 v9.7.1
 	github.com/spf13/viper v1.19.0
+	golang.org/x/crypto v0.35.0
 	gorm.io/driver/mysql v1.5.7
 	gorm.io/gorm v1.25.12
 )
@@ -55,7 +56,6 @@ require (
 	github.com/ugorji/go/codec v1.2.12 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/arch v0.14.0 // indirect
-	golang.org/x/crypto v0.35.0 // indirect
 	golang.org/x/exp v0.0.0-20250228200357-dead58393ab7 // indirect
 	golang.org/x/net v0.35.0 // indirect
 	golang.org/x/sys v0.30.0 // indirect

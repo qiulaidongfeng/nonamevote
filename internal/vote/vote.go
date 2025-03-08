@@ -330,27 +330,6 @@ var tmpl = filepath.Join(prefix+string(filepath.Separator), "template")
 
 var votetmpl = func() *template.Template {
 	t := template.New("vote")
-	m := template.FuncMap{
-		"getOption": func(name string) []Option {
-			for _, v := range Db.Data {
-				v.Lock.Lock()
-				if v.Name == name {
-					v.Lock.Unlock()
-					return v.Option
-				}
-				v.Lock.Unlock()
-			}
-			panic("未知的投票")
-		},
-		"getComment": func(path string) []string {
-			info := Db.Find(path)
-			if info == nil {
-				slog.Info("不存在的投票", "path", path)
-				return nil
-			}
-			return info.Comment
-		}}
-	t.Funcs(m)
 	file, err := os.ReadFile(filepath.Join(tmpl, "vote.temp"))
 	if err != nil {
 		panic(err)

@@ -112,7 +112,7 @@
     <form action="{{.Path}}" method="post">
         {{$logined := .Logined}}
         <div class="option-container">
-            {{range $index, $option := getOption .Name}}
+            {{range $index, $option := .Option}}
                 <div class="option-div">
                     <span>选项 {{$option.Name}}: 得票数: {{$option.GotNum}}</span>
                     {{if $logined}}
@@ -131,7 +131,7 @@
     <div class="comment-section">
         <h2>评论区</h2>
         <div class="comment-container">
-            {{range $index, $comment := getComment .Path}}
+            {{range $index, $comment := .Comment}}
                 <div class="comment">
                     <textarea class="comment-textarea" readonly>{{$comment}}</textarea>
                 </div>

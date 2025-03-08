@@ -18,6 +18,7 @@ import (
 	"gitee.com/qiulaidongfeng/nonamevote/internal/account"
 	"gitee.com/qiulaidongfeng/nonamevote/internal/config"
 	"gitee.com/qiulaidongfeng/nonamevote/internal/data"
+	"gitee.com/qiulaidongfeng/nonamevote/internal/safe"
 	"gitee.com/qiulaidongfeng/nonamevote/internal/vote"
 	"github.com/gin-gonic/gin"
 	"github.com/pquerna/otp"
@@ -154,7 +155,7 @@ func test_init() {
 			os.Exit(2)
 		}
 	}
-	k, err := account.NewUser("k")
+	k, _, err := account.NewUser("k")
 	if err != nil {
 		panic(err)
 	}
@@ -182,7 +183,7 @@ func test_init() {
 
 func logink(t testing.TB) string {
 	u := account.UserDb.Find("k")
-	k, _ := otp.NewKeyFromURL(u.TotpURL)
+	k, _ := otp.NewKeyFromURL(safe.Decrypt(u.TotpURL))
 	code, _ := totp.GenerateCodeCustom(k.Secret(), time.Now(), totp.ValidateOpts{})
 
 	req := httptest.NewRequest("POST", "/login", nil)

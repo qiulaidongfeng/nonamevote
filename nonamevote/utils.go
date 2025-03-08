@@ -26,8 +26,8 @@ func cacheFile(file string) []byte {
 	return b
 }
 
-func genTotpImg(user *account.User) []byte {
-	key, err := otp.NewKeyFromURL(user.TotpURL)
+func genTotpImg(url string) []byte {
+	key, err := otp.NewKeyFromURL(url)
 	if err != nil {
 		panic(err)
 	}

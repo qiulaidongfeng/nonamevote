@@ -1,10 +1,12 @@
 package data
 
 import (
+	"encoding/base64"
 	"fmt"
 	"reflect"
 	"strings"
 	"sync"
+	"unsafe"
 
 	"gitee.com/qiulaidongfeng/nonamevote/internal/config"
 	dm "github.com/go-sql-driver/mysql"
@@ -68,6 +70,11 @@ func (m *MysqlDb[T]) Add(v T) (int, func()) {
 }
 
 func (m *MysqlDb[T]) AddKV(k string, v T) (ok bool) {
+	if m.dbenum == User { //避免mysql报告加密后的数据  Incorrect string value
+		f := reflect.ValueOf(v).Elem().FieldByName("TotpURL")
+		s := f.String()
+		f.SetString(base64.StdEncoding.EncodeToString(unsafe.Slice(unsafe.StringData(s), len(s))))
+	}
 	result := m.db.Create(v)
 	ok = true
 	if result.Error != nil {
@@ -93,6 +100,15 @@ func (m *MysqlDb[T]) Data(yield func(string, T) bool) {
 			panic(err)
 		}
 		tmp := toT[T](oldt, model)
+		if m.dbenum == User { //避免mysql报告加密后的数据  Incorrect string value
+			f := reflect.ValueOf(tmp).Elem().FieldByName("TotpURL")
+			s := f.String()
+			b, err := base64.StdEncoding.DecodeString(s)
+			if err != nil {
+				panic(err)
+			}
+			f.SetString(unsafe.String(unsafe.SliceData(b), len(b)))
+		}
 		if !yield(m.key(tmp), tmp) {
 			break
 		}
@@ -123,7 +139,17 @@ func (m *MysqlDb[T]) find(db *gorm.DB, k string) (ret T) {
 	if result.RowsAffected == 0 {
 		return *new(T)
 	}
-	return toT[T](oldt, model)
+	ret = toT[T](oldt, model)
+	if m.dbenum == User { //避免mysql报告加密后的数据  Incorrect string value
+		f := reflect.ValueOf(ret).Elem().FieldByName("TotpURL")
+		s := f.String()
+		b, err := base64.StdEncoding.DecodeString(s)
+		if err != nil {
+			panic(err)
+		}
+		f.SetString(unsafe.String(unsafe.SliceData(b), len(b)))
+	}
+	return
 }
 
 func (m *MysqlDb[T]) Delete(k string) {

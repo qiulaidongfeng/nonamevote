@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"gitee.com/qiulaidongfeng/nonamevote/internal/data"
+	"gitee.com/qiulaidongfeng/nonamevote/internal/safe"
 	"github.com/pquerna/otp/totp"
 )
 
@@ -36,7 +37,7 @@ func (a allSession) Value() (driver.Value, error) {
 	return json.Marshal(a)
 }
 
-func NewUser(Name string) (*User, error) {
+func NewUser(Name string) (*User, string, error) {
 	key, err := totp.Generate(totp.GenerateOpts{
 		Issuer:      "无记名投票",
 		AccountName: Name,
@@ -46,11 +47,12 @@ func NewUser(Name string) (*User, error) {
 	if err != nil {
 		panic(err)
 	}
-	user := User{Name: Name, TotpURL: key.URL()}
+	url := key.URL()
+	user := User{Name: Name, TotpURL: safe.Encrypt(key.URL())}
 	if !UserDb.AddKV(Name, &user) {
-		return nil, fmt.Errorf("用户名 %s 已被注册", Name)
+		return nil, "", fmt.Errorf("用户名 %s 已被注册", Name)
 	}
-	return &user, nil
+	return &user,url, nil
 }
 
 var UserDb = data.NewDb(data.User, func(u *User) string { return u.Name })

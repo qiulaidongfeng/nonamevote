@@ -10,6 +10,7 @@ import (
 	"gitee.com/qiulaidongfeng/nonamevote/internal/config"
 	"gitee.com/qiulaidongfeng/nonamevote/internal/data"
 	"gitee.com/qiulaidongfeng/nonamevote/internal/rss"
+	"gitee.com/qiulaidongfeng/nonamevote/internal/safe"
 	"gitee.com/qiulaidongfeng/nonamevote/internal/utils"
 	"gitee.com/qiulaidongfeng/nonamevote/internal/vote"
 	"github.com/gin-gonic/gin"
@@ -43,14 +44,14 @@ func Handle(s *gin.Engine) {
 			ctx.Data(400, "text/html", register_fail)
 			return
 		}
-		user, err := account.NewUser(name)
+		user, url, err := account.NewUser(name)
 		if err != nil {
 			ctx.Data(409, "text/html", utils.GenTipText("注册失败："+err.Error(), "/register", "返回注册页"))
 			return
 		}
 		//在注册时直接就登录
 		addSession(ctx, user)
-		buf := genTotpImg(user)
+		buf := genTotpImg(url)
 		data := cacheFile("register.html")
 		ctx.Writer.WriteHeader(200)
 		ctx.Writer.Write(data[:imgIndex])
@@ -95,7 +96,7 @@ func Handle(s *gin.Engine) {
 			ctx.Data(401, "text/html", login_fail_nouser)
 			return
 		}
-		key, err := otp.NewKeyFromURL(user.TotpURL)
+		key, err := otp.NewKeyFromURL(safe.Decrypt(user.TotpURL))
 		if err != nil {
 			panic(err)
 		}
@@ -165,7 +166,7 @@ func Handle(s *gin.Engine) {
 			ctx.String(401, "没有这个用户")
 			return
 		}
-		buf := genTotpImg(user)
+		buf := genTotpImg(safe.Decrypt(user.TotpURL))
 		data := cacheFile("showQRCode.html")
 		ctx.Writer.WriteHeader(200)
 		ctx.Writer.Write(data[:imgIndex2])

@@ -117,7 +117,7 @@
                     <span>选项 {{$option.Name}}: 得票数: {{$option.GotNum}}</span>
                     {{if $logined}}
                         <label class="option-label">
-                            <input type="radio" name="k" value="{{$index}}"> 选投
+                            <input type="radio" name="k" value="{{$index}}" required> 选投
                         </label>
                     {{end}}
                 </div>
@@ -142,7 +142,7 @@
 
         {{if $logined}}
             <form class="comment-form" action="{{.Path}}?comment=true" method="post">
-                <textarea name="commentValue" class="comment-textarea"></textarea>
+                <textarea name="commentValue" class="comment-textarea" required></textarea>
                 <button type="submit">提交</button>
             </form>
         {{end}}

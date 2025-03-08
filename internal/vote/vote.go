@@ -17,6 +17,7 @@ import (
 	"gitee.com/qiulaidongfeng/nonamevote/internal/account"
 	"gitee.com/qiulaidongfeng/nonamevote/internal/config"
 	"gitee.com/qiulaidongfeng/nonamevote/internal/data"
+	"gitee.com/qiulaidongfeng/nonamevote/internal/utils"
 	"github.com/gin-gonic/gin"
 )
 
@@ -176,12 +177,13 @@ func Init() {
 		}
 		v := Db.Find(ctx.Request.URL.Path)
 		if v == nil {
-			ctx.String(404, "不存在的投票")
+			ctx.Data(404, "text/html", notexist)
 			return
 		}
 		var b strings.Builder
 		err = votetmpl.Execute(&b, gen{Info: v, Logined: logined})
 		if err != nil {
+			//Note:这里大概是测试时执行的，然后修复，不会让用户看到
 			slog.Error("", "err", err)
 			ctx.String(500, "internal server error")
 			return
@@ -194,11 +196,11 @@ func Init() {
 		//先检查是否登录
 		ok, err, se := account.CheckLogined(ctx)
 		if err != nil {
-			ctx.String(401, err.Error())
+			ctx.Data(401, "text/html", utils.GenTipText(err.Error(), "/login", "前往登录页"))
 			return
 		}
 		if !ok {
-			ctx.String(401, "需要登录才能投票")
+			ctx.Data(401, "text/html", needlogin)
 			return
 		}
 		path := ctx.Request.URL.Path
@@ -207,11 +209,12 @@ func Init() {
 		if ok := ctx.Query("comment"); ok != "" {
 			comment := ctx.PostForm("commentValue")
 			if comment == "" {
-				ctx.String(401, "评论不能为空")
+				ctx.Data(401, "text/html", utils.GenTipText("评论失败：评论不能为空", path, "返回"))
 				return
 			}
 			v := Db.Find(path)
 			if v == nil {
+				//Note:这里可能是恶意攻击，返回几个字就行
 				ctx.String(404, "不存在的投票")
 				return
 			}
@@ -265,16 +268,17 @@ func Init() {
 			return
 		}
 		if slices.Contains(user.VotedPath, path) {
-			ctx.String(401, "投票失败：因为已经投过票了")
+			ctx.Data(401, "text/html", utils.GenTipText("投票失败：因为已经投过票了", path, "返回"))
 			return
 		}
 		v := Db.Find(path)
 		if v == nil {
+			//Note:这里可能是恶意攻击，返回几个字就行
 			ctx.String(404, "不存在的投票")
 			return
 		}
 		if !v.End.After(time.Now()) {
-			ctx.String(401, "投票失败：因为投票截止时间已经到了")
+			ctx.Data(401, "text/html", utils.GenTipText("投票失败：因为投票截止时间已经到了", path, "返回"))
 			return
 		}
 		option := ctx.PostForm("k")
@@ -282,6 +286,7 @@ func Init() {
 		v.Lock.Lock()
 		defer v.Lock.Unlock()
 		if err != nil || opt >= len(v.Option) {
+			//Note:这里可能是恶意攻击，返回几个字就行
 			ctx.String(401, "投票失败")
 			return
 		}
@@ -293,7 +298,7 @@ func Init() {
 			}
 			user = account.UserDb.Find(se.Name)
 			if slices.Contains(user.VotedPath, path) {
-				ctx.String(401, "投票失败：因为已经投过票了")
+				ctx.Data(401, "text/html", utils.GenTipText("投票失败：因为已经投过票了", path, "返回"))
 				return
 			}
 		}
@@ -307,7 +312,7 @@ func Init() {
 			}
 			v = Db.Find(path)
 		}
-		ctx.String(200, "投票成功")
+		ctx.Data(200, "text/html", utils.GenTipText("投票成功", path, "返回"))
 	})
 }
 

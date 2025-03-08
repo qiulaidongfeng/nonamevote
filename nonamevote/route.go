@@ -10,6 +10,7 @@ import (
 	"gitee.com/qiulaidongfeng/nonamevote/internal/config"
 	"gitee.com/qiulaidongfeng/nonamevote/internal/data"
 	"gitee.com/qiulaidongfeng/nonamevote/internal/rss"
+	"gitee.com/qiulaidongfeng/nonamevote/internal/utils"
 	"gitee.com/qiulaidongfeng/nonamevote/internal/vote"
 	"github.com/gin-gonic/gin"
 	"github.com/pquerna/otp"
@@ -39,12 +40,12 @@ func Handle(s *gin.Engine) {
 	s.POST("/register", func(ctx *gin.Context) {
 		name := ctx.PostForm("name")
 		if name == "" {
-			ctx.String(400, "注册失败，因为没有提供用户名")
+			ctx.Data(400, "text/html", register_fail)
 			return
 		}
 		user, err := account.NewUser(name)
 		if err != nil {
-			ctx.String(409, err.Error())
+			ctx.Data(409, "text/html", utils.GenTipText("注册失败："+err.Error(), "/register", "返回注册页"))
 			return
 		}
 		//在注册时直接就登录
@@ -62,11 +63,11 @@ func Handle(s *gin.Engine) {
 		//先考虑是否已经登录
 		ok, err, _ := account.CheckLogined(ctx)
 		if ok {
-			ctx.String(200, "登录成功")
+			ctx.Data(200, "text/html", login_ed)
 			return
 		}
 		if err != nil {
-			ctx.String(401, "登录失败：%s", err.Error())
+			ctx.Data(401, "text/html", utils.GenTipText("登录失败："+err.Error(), "/login", "返回登录页"))
 			return
 		}
 		ctx.Data(200, "text/html", cacheFile("login.html"))
@@ -75,23 +76,23 @@ func Handle(s *gin.Engine) {
 		//先考虑是否已经登录
 		ok, err, _ := account.CheckLogined(ctx)
 		if ok {
-			ctx.String(200, "登录成功")
+			ctx.Data(200, "text/html", login_ed)
 			return
 		}
 
 		name := ctx.PostForm("name")
 		if name == "" {
-			ctx.String(401, "登录失败，因为没有提供用户名")
+			ctx.Data(401, "text/html", login_fail_noname)
 			return
 		}
 		code := ctx.PostForm("totp")
 		if len(code) != 6 {
-			ctx.String(401, "登录失败，因为totp验证码必须是6位数")
+			ctx.Data(401, "text/html", login_fail_totpnum)
 			return
 		}
 		user := account.UserDb.Find(name)
 		if user == nil {
-			ctx.String(401, "登录失败，因为没有这个用户")
+			ctx.Data(401, "text/html", login_fail_nouser)
 			return
 		}
 		key, err := otp.NewKeyFromURL(user.TotpURL)
@@ -99,24 +100,21 @@ func Handle(s *gin.Engine) {
 			panic(err)
 		}
 		if !totp.Validate(code, key.Secret()) {
-			ctx.String(401, `登录失败：totp验证码不对
-请排查以下原因
-1. 输入时输错了验证码
-2. 所有的设备时间不一致`)
+			ctx.Data(401, "text/html", login_fail_totperr)
 			return
 		}
 		addSession(ctx, user)
-		ctx.String(200, "登录成功")
+		ctx.Data(200, "text/html", login_ok)
 	})
 	s.GET("/createvote", func(ctx *gin.Context) {
 		//先检查是否已登录
 		ok, err, _ := account.CheckLogined(ctx)
 		if !ok {
 			if err != nil {
-				ctx.String(401, "登录失败：%s", err.Error())
+				ctx.Data(401, "text/html", utils.GenTipText("登录失败："+err.Error(), "/login", "前往登录页"))
 				return
 			}
-			ctx.String(401, "已登录用户才能创建投票")
+			ctx.Data(401, "text/html", createvote_fail)
 			return
 		}
 		ctx.Data(200, "text/html", cacheFile("createvote.html"))
@@ -126,42 +124,44 @@ func Handle(s *gin.Engine) {
 		ok, err, _ := account.CheckLogined(ctx)
 		if !ok {
 			if err != nil {
-				ctx.String(401, "登录失败：%s", err.Error())
+				ctx.Data(401, "text/html", utils.GenTipText("登录失败："+err.Error(), "/login", "前往登录页"))
 				return
 			}
-			ctx.String(401, "已登录用户才能创建投票")
+			ctx.Data(401, "text/html", createvote_fail)
 			return
 		}
 		_, err = vote.ParserCreateVote(ctx)
 		if err != nil {
-			ctx.String(400, "创建投票失败：%s", err.Error())
+			ctx.Data(400, "text/html", utils.GenTipText("创建投票失败："+err.Error(), "/createvote", "返回创建投票页"))
 			return
 		}
-		ctx.String(200, "创建投票成功")
+		//TODO:跳转到新创建的投票页
+		ctx.Data(200, "text/html", createvote_ok)
 	})
 	s.GET("/allvote", vote.AllVote)
 	s.GET("/exit", func(ctx *gin.Context) {
 		_, err := ctx.Cookie("session")
 		if err != nil {
-			ctx.String(401, "未登录")
+			ctx.Data(401, "text/html", exit_fail)
 			return
 		}
 		ctx.SetCookie("session", "", -1, "", "", true, true)
-		ctx.String(200, "退出登录成功")
+		ctx.Data(200, "text/html", exit_ok)
 	})
 	s.GET("/showQRCode", func(ctx *gin.Context) {
 		//先检查是否已登录
 		ok, err, se := account.CheckLogined(ctx)
 		if !ok {
 			if err != nil {
-				ctx.String(401, "登录失败：%s", err.Error())
+				ctx.Data(401, "text/html", utils.GenTipText("登录失败："+err.Error(), "/login", "前往登录页"))
 				return
 			}
-			ctx.String(401, "您未登录")
+			ctx.Data(401, "text/html", show_fail_nologin)
 			return
 		}
 		user := account.UserDb.Find(se.Name)
 		if user == nil {
+			//Note:这里极不可能是正常用户的行为，所以返回简短的提示文字就行
 			ctx.String(401, "没有这个用户")
 			return
 		}
@@ -184,7 +184,7 @@ func Handle(s *gin.Engine) {
 		s := ctx.PostForm("search")
 		v := vote.NameDb.Find(s)
 		if v == nil {
-			ctx.String(404, "查询的投票不存在")
+			ctx.Data(404, "text/html", search_fail)
 			return
 		}
 		ret := `
@@ -214,9 +214,3 @@ func Handle(s *gin.Engine) {
 		ctx.String(200, rebots)
 	})
 }
-
-const rebots = `
-User-agent: *
-Disallow: /exit
-Disallow: /showQRCode
-`

@@ -92,6 +92,18 @@ func BenchmarkAllVote(b *testing.B) {
 	benchmark(b, req, nil)
 }
 
+func BenchmarkGetVote(b *testing.B) {
+	req := httptest.NewRequest("GET", "/vote/1", nil)
+
+	origin := vote.Db
+	defer func() { vote.Db = origin }()
+	vote.Db = data.NewOsDb[*vote.Info]("", nil)
+	vote.Db.AddKV("/vote/1", &vote.Info{Name: "n", End: time.Now(), Introduce: "i",
+		Path: "/vote/1", Option: data.All[vote.Option]{vote.Option{Name: "0", GotNum: 1}, vote.Option{Name: "1", GotNum: 2}},
+		Comment: data.All[string]{"1", "2"}})
+	benchmark(b, req, nil)
+}
+
 func benchmark(b *testing.B, req *http.Request, f func(*http.Request)) {
 	defer func(start time.Time) {
 		total := time.Since(start).Seconds()

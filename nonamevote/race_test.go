@@ -42,7 +42,7 @@ func TestRace(t *testing.T) {
 			Value: cv,
 		}
 		req.AddCookie(cookie)
-	}, 200, func(s string) bool { return strings.Contains(s, "登录成功") })
+	}, 200, func(s string) bool { return strings.Contains(s, "已经登录") })
 	sendRequest(t, &wg, "POST", "/createvote", func(req *http.Request, v *url.Values) {
 		req.AddCookie(&http.Cookie{
 			Name:  "session",

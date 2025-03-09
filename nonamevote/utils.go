@@ -5,6 +5,7 @@ import (
 	"crypto/md5"
 	"image/png"
 	"io"
+	"net/http"
 	"unsafe"
 
 	"gitee.com/qiulaidongfeng/nonamevote/internal/account"
@@ -24,6 +25,18 @@ func cacheFile(file string) []byte {
 		panic(err)
 	}
 	return b
+}
+
+func handleFile(ctx *gin.Context, name string) {
+	f, err := hfs.Open(name)
+	if err != nil {
+		panic(err)
+	}
+	i, err := f.Stat()
+	if err != nil {
+		panic(err)
+	}
+	http.ServeContent(ctx.Writer, ctx.Request, name, i.ModTime(), f)
 }
 
 func genTotpImg(url string) []byte {

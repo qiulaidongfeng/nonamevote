@@ -42,12 +42,17 @@ func BenchmarkCreateVote(b *testing.B) {
 	v.Set("option", "k l")
 	req.AddCookie(cookie)
 
-	benchmark(b, req, nil)
+	benchmark(b, req, nil, false)
 }
 
 func BenchmarkIndex(b *testing.B) {
 	req := httptest.NewRequest("GET", "/", nil)
-	benchmark(b, req, nil)
+	benchmark(b, req, nil, false)
+}
+
+func BenchmarkIndex2(b *testing.B) {
+	req := httptest.NewRequest("GET", "/", nil)
+	benchmark(b, req, nil, true)
 }
 
 func BenchmarkRegister(b *testing.B) {
@@ -57,7 +62,7 @@ func BenchmarkRegister(b *testing.B) {
 		req.PostForm = make(url.Values)
 		v := &req.PostForm
 		v.Set("name", randStr())
-	})
+	}, false)
 }
 
 func BenchmarkSearch(b *testing.B) {
@@ -75,7 +80,7 @@ func BenchmarkSearch(b *testing.B) {
 		req.PostForm = make(url.Values)
 		v := &req.PostForm
 		v.Set("search", "1")
-	})
+	}, false)
 }
 
 func BenchmarkAllVote(b *testing.B) {
@@ -90,7 +95,7 @@ func BenchmarkAllVote(b *testing.B) {
 		vote.Db.AddKV("/vote/"+strconv.Itoa(i), &vote.Info{})
 		vote.NameDb.AddKV(strconv.Itoa(i), &vote.NameAndPath{Name: strconv.Itoa(i), Path: []string{"/vote/" + strconv.Itoa(i)}})
 	}
-	benchmark(b, req, nil)
+	benchmark(b, req, nil, false)
 }
 
 func BenchmarkGetVote(b *testing.B) {
@@ -102,24 +107,41 @@ func BenchmarkGetVote(b *testing.B) {
 	vote.Db.AddKV("/vote/1", &vote.Info{Name: "n", End: time.Now(), Introduce: "i",
 		Path: "/vote/1", Option: data.All[vote.Option]{vote.Option{Name: "0", GotNum: 1}, vote.Option{Name: "1", GotNum: 2}},
 		Comment: data.All[string]{"1", "2"}})
-	benchmark(b, req, nil)
+	benchmark(b, req, nil, false)
 }
 
-func benchmark(b *testing.B, req *http.Request, f func(*http.Request)) {
+func benchmark(b *testing.B, req *http.Request, f func(*http.Request), test304 bool) {
 	defer func(start time.Time) {
 		total := time.Since(start).Seconds()
 		b.ReportMetric(float64(b.N)/total, "reqs/s")
 	}(time.Now())
 
+	var h http.Header
+	want := 200
+	if test304 {
+		w := httptest.NewRecorder()
+		req := req.Clone(req.Context())
+		if f != nil {
+			f(req)
+		}
+		S.Handler().ServeHTTP(w, req)
+		h = w.Header()
+		want = 304
+	}
+
 	b.RunParallel(func(p *testing.PB) {
 		for p.Next() {
 			w := httptest.NewRecorder()
 			req := req.Clone(req.Context())
+			if h != nil {
+				req.Header = h.Clone()
+				req.Header.Set("If-Modified-Since", h.Get("Last-Modified"))
+			}
 			if f != nil {
 				f(req)
 			}
 			S.Handler().ServeHTTP(w, req)
-			if w.Code != 200 {
+			if w.Code != want {
 				b.Fail()
 				bs, err := io.ReadAll(w.Body)
 				if err != nil {

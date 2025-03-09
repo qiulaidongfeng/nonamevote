@@ -33,10 +33,10 @@ func Handle(s *gin.Engine) {
 	})
 	vote.Init()
 	s.GET("/", func(ctx *gin.Context) {
-		ctx.Data(200, "text/html", cacheFile("index.html"))
+		handleFile(ctx, "index.html")
 	})
 	s.GET("/register", func(ctx *gin.Context) {
-		ctx.Data(200, "text/html", cacheFile("register.html"))
+		handleFile(ctx, "register.html")
 	})
 	s.POST("/register", func(ctx *gin.Context) {
 		name := ctx.PostForm("name")
@@ -71,7 +71,7 @@ func Handle(s *gin.Engine) {
 			ctx.Data(401, "text/html", utils.GenTipText("登录失败："+err.Error(), "/login", "返回登录页"))
 			return
 		}
-		ctx.Data(200, "text/html", cacheFile("login.html"))
+		handleFile(ctx, "login.html")
 	})
 	s.POST("/login", func(ctx *gin.Context) {
 		//先考虑是否已经登录
@@ -118,7 +118,7 @@ func Handle(s *gin.Engine) {
 			ctx.Data(401, "text/html", createvote_fail)
 			return
 		}
-		ctx.Data(200, "text/html", cacheFile("createvote.html"))
+		handleFile(ctx, "createvote.html")
 	})
 	s.POST("/createvote", func(ctx *gin.Context) {
 		//先检查是否已登录
@@ -179,7 +179,7 @@ func Handle(s *gin.Engine) {
 		ctx.Writer.WriteString(rss.Generate())
 	})
 	s.GET("/search", func(ctx *gin.Context) {
-		ctx.Data(200, "text/html", cacheFile("search.html"))
+		handleFile(ctx, "search.html")
 	})
 	s.POST("/search", func(ctx *gin.Context) {
 		s := ctx.PostForm("search")

@@ -28,5 +28,5 @@ func BenchmarkLogin(b *testing.B) {
 			"name": {"k"},
 			"totp": {code},
 		}
-	})
+	}, false)
 }

@@ -130,10 +130,11 @@ func ParserCreateVote(ctx *gin.Context) (*Info, error) {
 			n.Lock.Lock()
 			old := slices.Clone(n.Path)
 			n.Path = append(n.Path, path)
-			n.Lock.Unlock()
 			if NameDb.Updata(ret.Name, old, "Path", n.Path) {
+				n.Lock.Unlock()
 				break
 			}
+			n.Lock.Unlock()
 			n = NameDb.Find(ret.Name)
 		}
 	}
@@ -181,7 +182,9 @@ func Init() {
 			return
 		}
 		var b strings.Builder
+		v.Lock.Lock()
 		err = votetmpl.Execute(&b, gen{Info: v, Logined: logined})
+		v.Lock.Unlock()
 		if err != nil {
 			//Note:这里大概是测试时执行的，然后修复，不会让用户看到
 			slog.Error("", "err", err)

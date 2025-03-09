@@ -151,7 +151,24 @@ func (t *OsDb[T]) AddIpCount(ip string) (r int64) {
 			time.AfterFunc(time.Duration(config.GetExpiration())*time.Second, func() {
 				t.t.M.Delete(ip)
 			})
-			return
+			return 1
+		}
+		v = old
+	}
+	p := v.(*int64)
+	return atomic.AddInt64(p, 1)
+}
+
+func (t *OsDb[T]) AddLoginNum(user string) (r int64) {
+	v, ok := t.t.M.Load(user)
+	if !ok {
+		p := int64(1)
+		old, load := t.t.M.LoadOrStore(user, &p)
+		if !load {
+			time.AfterFunc(time.Duration(30)*time.Second, func() {
+				t.t.M.Delete(user)
+			})
+			return 1
 		}
 		v = old
 	}

@@ -48,6 +48,7 @@ var register_fail = utils.GenTipText("注册失败，因为没有提供用户名
 var login_fail_noname = utils.GenTipText("登录失败，因为没有提供用户名", "/login", "返回登录页")
 var login_fail_totpnum = utils.GenTipText("登录失败，因为totp验证码必须是6位数", "/login", "返回登录页")
 var login_fail_nouser = utils.GenTipText("登录失败，因为没有这个用户", "/login", "返回登录页")
+var login_fail_too_often = utils.GenTipText("登录失败，30秒内只能尝试3次登录", "/login", "返回登录页")
 var login_fail_totperr = utils.GenTipText(`登录失败：totp验证码不对
 请排查以下原因
 1. 输入时输错了验证码

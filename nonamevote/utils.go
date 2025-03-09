@@ -79,6 +79,7 @@ func addSession(ctx *gin.Context, user *account.User) {
 func Close() {
 	account.SessionDb.Save()
 	account.UserDb.Save()
+	account.LoginNumDb.Save()
 	vote.Db.Save()
 	vote.NameDb.Save()
 }

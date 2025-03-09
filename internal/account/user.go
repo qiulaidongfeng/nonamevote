@@ -52,7 +52,8 @@ func NewUser(Name string) (*User, string, error) {
 	if !UserDb.AddKV(Name, &user) {
 		return nil, "", fmt.Errorf("用户名 %s 已被注册", Name)
 	}
-	return &user,url, nil
+	return &user, url, nil
 }
 
 var UserDb = data.NewDb(data.User, func(u *User) string { return u.Name })
+var LoginNumDb = data.NewDb[*int64](data.LoginNum, nil)

@@ -96,6 +96,10 @@ func Handle(s *gin.Engine) {
 			ctx.Data(401, "text/html", login_fail_nouser)
 			return
 		}
+		if account.LoginNumDb.AddLoginNum(user.Name) > 3 && !config.Test {
+			ctx.Data(401, "text/html", login_fail_too_often)
+			return
+		}
 		key, err := otp.NewKeyFromURL(safe.Decrypt(user.TotpURL))
 		if err != nil {
 			panic(err)

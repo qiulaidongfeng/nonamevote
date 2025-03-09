@@ -311,6 +311,22 @@ func (r *RedisDb[T]) AddIpCount(ip string) (ret int64) {
 	return i
 }
 
+func (r *RedisDb[T]) AddLoginNum(user string) int64 {
+	i, err := r.rdb.Incr(context.Background(), user).Result()
+	if i == 1 {
+		err = r.rdb.Expire(context.Background(), user, time.Duration(30)*time.Second).Err()
+		if err != nil && !Test {
+			slog.Error("", "err", err)
+			return i
+		}
+	}
+	if err != nil && !Test {
+		slog.Error("", "err", err)
+		return i
+	}
+	return i
+}
+
 func (r *RedisDb[T]) Updata(key string, old any, field string, v any) (ok bool) {
 	switch field {
 	case "SessionIndex":

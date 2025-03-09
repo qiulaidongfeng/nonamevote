@@ -226,10 +226,15 @@ func (m *MysqlDb[T]) Clear() {
 }
 
 func (m *MysqlDb[T]) AddIpCount(ip string) (r int64) {
+	panic("未实现")
 	// TODO:处理error
 	m.db.Raw("update ips set num=num+1 where ip=?", ip)
 	m.db.Raw("select num from ips where ip=?", ip).Scan(&r)
 	return r
+}
+
+func (m *MysqlDb[T]) AddLoginNum(user string) int64 {
+	panic("未实现")
 }
 
 // 为实现接口而写，实际无效果

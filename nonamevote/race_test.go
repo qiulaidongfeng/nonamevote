@@ -156,6 +156,7 @@ func TestMain(m *testing.M) {
 			account.UserDb.Clear()
 			vote.Db.Clear()
 			vote.NameDb.Clear()
+			account.LoginNumDb.Clear()
 		}
 	}()
 	test_init()

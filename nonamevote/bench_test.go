@@ -157,10 +157,10 @@ func test_init() {
 	account.Test = true
 	data.Test = true
 	config.Test = true
-	for _, v := range []any{account.UserDb, account.SessionDb, vote.Db, vote.NameDb} {
+	for _, v := range []any{account.UserDb, account.SessionDb, vote.Db, vote.NameDb, account.LoginNumDb} {
 		v.(interface{ Load() }).Load()
 	}
-	for _, v := range []any{account.UserDb, account.SessionDb, vote.Db, vote.NameDb} {
+	for _, v := range []any{account.UserDb, account.SessionDb, vote.Db, vote.NameDb, account.LoginNumDb} {
 		have := false
 		f := reflect.ValueOf(v).MethodByName("Data")
 		yield := reflect.MakeFunc(f.Type().In(0), func(args []reflect.Value) (results []reflect.Value) {

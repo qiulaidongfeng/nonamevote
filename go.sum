@@ -4,6 +4,8 @@ gitee.com/qiulaidongfeng/cachefs v0.8.0 h1:pTsfVFGnlqOFpKBuYgxcGEm7TJziCxyQqtrli
 gitee.com/qiulaidongfeng/cachefs v0.8.0/go.mod h1:WUUNFBRlAgJMRpwdqV5vmFB7v9723X3t6WCuBeFX7J8=
 gitee.com/qiulaidongfeng/cachefs v0.9.0 h1:0d42CUEdBtCCLnE2z9RTyAdqjFa3lvZXxSbFWcnSKDM=
 gitee.com/qiulaidongfeng/cachefs v0.9.0/go.mod h1:WUUNFBRlAgJMRpwdqV5vmFB7v9723X3t6WCuBeFX7J8=
+gitee.com/qiulaidongfeng/cachefs v0.10.0 h1:2DyiLl20Q7DeJJuV6cwe1W2CLHke57hrscdcrPiDWag=
+gitee.com/qiulaidongfeng/cachefs v0.10.0/go.mod h1:WUUNFBRlAgJMRpwdqV5vmFB7v9723X3t6WCuBeFX7J8=
 github.com/boombuler/barcode v1.0.1-0.20190219062509-6c824513bacc/go.mod h1:paBWMcWSl3LHKBqUq+rly7CNSldXjb2rDl3JlRe0mD8=
 github.com/boombuler/barcode v1.0.2 h1:79yrbttoZrLGkL/oOI8hBrUKucwOL0oOjUgEguGMcJ4=
 github.com/boombuler/barcode v1.0.2/go.mod h1:paBWMcWSl3LHKBqUq+rly7CNSldXjb2rDl3JlRe0mD8=

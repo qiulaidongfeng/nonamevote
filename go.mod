@@ -3,7 +3,7 @@ module gitee.com/qiulaidongfeng/nonamevote
 go 1.24
 
 require (
-	gitee.com/qiulaidongfeng/cachefs v0.9.0
+	gitee.com/qiulaidongfeng/cachefs v0.10.0
 	github.com/fsnotify/fsnotify v1.8.0
 	github.com/gin-gonic/gin v1.10.0
 	github.com/go-sql-driver/mysql v1.9.0

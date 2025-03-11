@@ -169,26 +169,28 @@ const SessionMaxAge = 12 * 60 * 60 //12小时
 const sessionMaxAge = time.Hour * 12
 
 func init() {
-	now := time.Now()
-	for k, s := range SessionDb.Data {
-		diff := now.Sub(s.CreateTime)
-		if diff > sessionMaxAge {
-			SessionDb.Delete(k)
-		}
-	}
-
-	go func() {
-		for {
-			//每经过一次session最大有效时间，检查一次所有session，有过期的删除。
-			<-time.Tick(sessionMaxAge)
-			for k, v := range SessionDb.Data {
-				diff := now.Sub(v.CreateTime)
-				if diff > sessionMaxAge {
-					SessionDb.Delete(k)
-				}
+	if config.GetDbMode() == "os" {
+		now := time.Now()
+		for k, s := range SessionDb.Data {
+			diff := now.Sub(s.CreateTime)
+			if diff > sessionMaxAge {
+				SessionDb.Delete(k)
 			}
 		}
-	}()
+
+		go func() {
+			for {
+				//每经过一次session最大有效时间，检查一次所有session，有过期的删除。
+				<-time.Tick(sessionMaxAge)
+				for k, v := range SessionDb.Data {
+					diff := now.Sub(v.CreateTime)
+					if diff > sessionMaxAge {
+						SessionDb.Delete(k)
+					}
+				}
+			}
+		}()
+	}
 }
 
 // CheckLogined 检查是否已经登录

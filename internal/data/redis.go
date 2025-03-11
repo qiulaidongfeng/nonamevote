@@ -115,6 +115,10 @@ func (r *RedisDb[T]) AddKV(k string, v T) (ok bool) {
 				return nil
 			}
 			_, err = tx.TxPipelined(context.Background(), func(p redis.Pipeliner) error {
+				//TODO:SessionMaxAge移动到其他包避免循环导入
+				if err := p.Expire(context.Background(), k, 12*60*60*time.Second).Err(); err != nil {
+					return err
+				}
 				return p.HSet(context.Background(), k, h).Err()
 			})
 			if err == nil {

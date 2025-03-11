@@ -50,13 +50,13 @@ func NewDb[T any](typ int, key func(T) string) Db[T] {
 	}
 	//如果是os模式，全部使用OsDb
 	//如果是redis模式，全部使用RedisDb
-	//如果是mysql-redis模式，除Ip和LoginNum数据库用RedisDb,其他用MysqlDb
+	//如果是mysql-redis模式，除Ip和LoginNum数据库和Session数据库用RedisDb,其他用MysqlDb
 	if os {
 		r := NewOsDb(file, key)
 		r.ipDb = typ == Ip
 		return r
 	}
-	if typ == Ip || typ == LoginNum {
+	if typ == Ip || typ == LoginNum || typ == Session {
 		return NewRedisDb(host, path, typ, key)
 	}
 	if mysql {

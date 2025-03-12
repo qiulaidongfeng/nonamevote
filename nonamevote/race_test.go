@@ -13,7 +13,6 @@ import (
 	"unsafe"
 
 	"gitee.com/qiulaidongfeng/nonamevote/internal/account"
-	"gitee.com/qiulaidongfeng/nonamevote/internal/config"
 	"gitee.com/qiulaidongfeng/nonamevote/internal/data"
 	"gitee.com/qiulaidongfeng/nonamevote/internal/vote"
 )
@@ -148,18 +147,12 @@ func sendRequest(t *testing.T, wg *sync.WaitGroup, method string, path string, f
 }
 
 func TestMain(m *testing.M) {
-	defer func() {
-		//让测试数据库清空
-		if config.GetDbMode() != "os" {
-			data.IpCount.Clear()
-			account.SessionDb.Clear()
-			account.UserDb.Clear()
-			vote.Db.Clear()
-			vote.NameDb.Clear()
-			account.LoginNumDb.Clear()
-		}
-	}()
 	test_init()
 	m.Run()
-
+	data.IpCount.Clear()
+	account.SessionDb.Clear()
+	account.UserDb.Clear()
+	vote.Db.Clear()
+	vote.NameDb.Clear()
+	account.LoginNumDb.Clear()
 }

@@ -59,6 +59,9 @@ func NewDb[T any](typ int, key func(T) string) Db[T] {
 	if typ == Ip || typ == LoginNum || typ == Session {
 		return NewRedisDb(host, path, typ, key)
 	}
+	if config.GetDbMode() == "mongodb-redis" {
+		return NewMongoDb[T](typ, key)
+	}
 	if mysql {
 		user, password, addr := config.GetDsnInfo()
 		return NewMysqlDb(user, password, addr, typ, key)

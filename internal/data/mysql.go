@@ -167,6 +167,19 @@ func (m *MysqlDb[T]) Updata(key string, old any, field string, v any) (ok bool) 
 	return result.RowsAffected == 1
 }
 
+func (m *MysqlDb[T]) IncField(key string, field string) {
+	result := m.db.Exec(fmt.Sprintf("update users set `%s`=`%s`+1 where name='%s'", field, field, key))
+	if result.Error != nil {
+		panic(result.Error)
+	}
+}
+
+func (m *MysqlDb[T]) UpdataSession(key string, index uint8, v [16]byte, old, new any) {
+	for !m.Updata(key, old, "Session", new) {
+
+	}
+}
+
 func primary(db int) string {
 	switch db {
 	case User:
@@ -233,9 +246,8 @@ func (m *MysqlDb[T]) AddIpCount(ip string) (r int64) {
 	return r
 }
 
-func (m *MysqlDb[T]) AddLoginNum(user string) int64 {
-	panic("未实现")
-}
+// 为实现接口而写，实际无效果
+func (m *MysqlDb[T]) AddLoginNum(user string) int64 { return 0 }
 
 // 为实现接口而写，实际无效果
 func (m *MysqlDb[T]) Load() {}

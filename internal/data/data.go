@@ -16,6 +16,8 @@ type Db[T any] interface {
 	IncOption(key string, i int, old any, v any) (ok bool)
 	Clear()
 	AddLoginNum(user string) (r int64)
+	IncField(key string, field string)
+	UpdataSession(key string, index uint8, v [16]byte, old, new any)
 }
 
 var _ Db[any] = (*OsDb[any])(nil)

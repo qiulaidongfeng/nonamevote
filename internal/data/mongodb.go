@@ -5,6 +5,7 @@ import (
 	"log"
 	"reflect"
 	"strconv"
+	"strings"
 	"sync"
 	"unsafe"
 
@@ -15,10 +16,12 @@ import (
 )
 
 type MongoDb[T any] struct {
-	db         *mongo.Client
-	dbenum     int
-	collection *mongo.Collection
-	key        func(T) string
+	db            *mongo.Client
+	dbenum        int
+	collection    *mongo.Collection
+	key           func(T) string
+	filterPool    sync.Pool
+	needClearPool sync.Pool
 }
 
 var _ Db[any] = (*MongoDb[any])(nil)
@@ -45,12 +48,22 @@ func NewMongoDb[T any](dbenum int, key func(T) string) *MongoDb[T] {
 		dbenum:     dbenum,
 		collection: c,
 		key:        key,
+		filterPool: sync.Pool{New: func() any {
+			return bson.M{}
+		}},
+		needClearPool: sync.Pool{New: func() any {
+			return bson.M{}
+		}},
 	}
 }
 
 func (m *MongoDb[T]) Add(v T) (int, func()) {
 	return i.Inc(), func() {
 		d := m.toD(v)
+		defer func() {
+			clear(d)
+			m.needClearPool.Put(d)
+		}()
 		_, err := m.collection.InsertOne(context.Background(), d)
 		if err != nil {
 			panic(err)
@@ -60,6 +73,10 @@ func (m *MongoDb[T]) Add(v T) (int, func()) {
 
 func (m *MongoDb[T]) AddKV(key string, v T) (ok bool) {
 	d := m.toD(v)
+	defer func() {
+		clear(d)
+		m.needClearPool.Put(d)
+	}()
 	_, err := m.collection.InsertOne(context.Background(), d)
 	if mongo.IsDuplicateKeyError(err) {
 		return false
@@ -76,8 +93,12 @@ func (m *MongoDb[T]) Data(yield func(string, T) bool) {
 	if err != nil {
 		panic(err)
 	}
+	var result = m.needClearPool.Get().(bson.M)
+	defer func() {
+		clear(result)
+		m.needClearPool.Put(result)
+	}()
 	for cursor.Next(context.Background()) {
-		var result bson.M
 		if err = cursor.Decode(&result); err != nil {
 			panic(err)
 		}
@@ -89,6 +110,7 @@ func (m *MongoDb[T]) Data(yield func(string, T) bool) {
 		if !yield(m.key(tmp), tmp) {
 			break
 		}
+		clear(result)
 	}
 	if err = cursor.Err(); err != nil {
 		log.Fatal(err)
@@ -96,8 +118,14 @@ func (m *MongoDb[T]) Data(yield func(string, T) bool) {
 }
 
 func (m *MongoDb[T]) Find(k string) T {
-	filter := bson.M{"_id": k}
-	var result bson.M
+	filter := m.filterPool.Get().(bson.M)
+	defer m.filterPool.Put(filter)
+	filter["_id"] = k
+	var result = m.needClearPool.Get().(bson.M)
+	defer func() {
+		clear(result)
+		m.needClearPool.Put(result)
+	}()
 	err := m.collection.FindOne(context.Background(), filter).Decode(&result)
 	if err != nil && err.Error() != "mongo: no documents in result" {
 		panic(err)
@@ -109,7 +137,9 @@ func (m *MongoDb[T]) Find(k string) T {
 }
 
 func (m *MongoDb[T]) Delete(k string) {
-	filter := bson.M{"_id": k}
+	filter := m.filterPool.Get().(bson.M)
+	defer m.filterPool.Put(filter)
+	filter["_id"] = k
 	_, err := m.collection.DeleteOne(context.Background(), filter)
 	if err != nil {
 		panic(err)
@@ -117,11 +147,28 @@ func (m *MongoDb[T]) Delete(k string) {
 }
 
 func (m *MongoDb[T]) Updata(key string, old any, field string, v any) (ok bool) {
-	//TODO:利用要更新的在mongodb都是存为array优化
-	filter := bson.M{"_id": key, field: old}
-	update := bson.M{"$set": bson.M{
-		field: v,
-	}}
+	var filter = m.filterPool.Get().(bson.M)
+	defer func() {
+		m.filterPool.Put(filter)
+	}()
+	filter["_id"] = key
+
+	var update = m.needClearPool.Get().(bson.M)
+	defer func() {
+		clear(update)
+		m.needClearPool.Put(update)
+	}()
+
+	var fieldm = m.needClearPool.Get().(bson.M)
+	defer func() {
+		clear(fieldm)
+		m.needClearPool.Put(fieldm)
+	}()
+	rv := reflect.ValueOf(v)
+	tmp := rv.Index(rv.Len() - 1)
+	fieldm[field] = tmp.Interface()
+	update["$push"] = fieldm
+
 	result, err := m.collection.UpdateOne(context.Background(), filter, update)
 	if err != nil {
 		panic(err)
@@ -129,13 +176,77 @@ func (m *MongoDb[T]) Updata(key string, old any, field string, v any) (ok bool) 
 	return result.ModifiedCount == 1
 }
 
+func (m *MongoDb[T]) IncField(key string, field string) {
+	var filter = m.filterPool.Get().(bson.M)
+	defer func() {
+		m.filterPool.Put(filter)
+	}()
+	filter["_id"] = key
+
+	var update = m.needClearPool.Get().(bson.M)
+	defer func() {
+		clear(update)
+		m.needClearPool.Put(update)
+	}()
+
+	var opm = m.needClearPool.Get().(bson.M)
+	defer func() {
+		clear(opm)
+		m.needClearPool.Put(opm)
+	}()
+	opm[field] = 1
+	update["$inc"] = opm
+
+	_, err := m.collection.UpdateOne(context.Background(), filter, update)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func (m *MongoDb[T]) UpdataSession(key string, index uint8, v [16]byte, _, _ any) {
+	filter := m.filterPool.Get().(bson.M)
+	defer m.filterPool.Put(filter)
+	filter["_id"] = key
+
+	var update = m.needClearPool.Get().(bson.M)
+	defer func() {
+		clear(update)
+		m.needClearPool.Put(update)
+	}()
+
+	var opm = m.needClearPool.Get().(bson.M)
+	defer func() {
+		clear(opm)
+		m.needClearPool.Put(opm)
+	}()
+	opm["Session."+strconv.Itoa(int(index))] = v
+	update["$set"] = opm
+
+	_, err := m.collection.UpdateOne(context.Background(), filter, update)
+	if err != nil {
+		panic(err)
+	}
+}
+
 func (m *MongoDb[T]) IncOption(key string, i int, old any, v any) (ok bool) {
-	filter := bson.M{"_id": key}
-	update := bson.M{
-		"$inc": bson.M{
-			//TODO:优化字符串拼接
-			"Option." + strconv.Itoa(i) + ".gotnum": 1,
-		}}
+	filter := m.filterPool.Get().(bson.M)
+	defer m.filterPool.Put(filter)
+	filter["_id"] = key
+
+	var update = m.needClearPool.Get().(bson.M)
+	defer func() {
+		clear(update)
+		m.needClearPool.Put(update)
+	}()
+
+	var opm = m.needClearPool.Get().(bson.M)
+	defer func() {
+		clear(opm)
+		m.needClearPool.Put(opm)
+	}()
+	opm[strings.Join([]string{"Option.", strconv.Itoa(i), ".gotnum"}, "")] = 1
+	update["$inc"] = opm
+
 	result, err := m.collection.UpdateOne(context.Background(), filter, update)
 	if err != nil {
 		panic(err)
@@ -228,7 +339,7 @@ func (m *MongoDb[T]) toD(v any) bson.M {
 	}
 	t := r.Type()
 	pri := m_primary(m.dbenum)
-	ret := bson.M{}
+	ret := m.needClearPool.Get().(bson.M)
 	for i := range r.NumField() {
 		f := r.Field(i)
 		info := t.Field(i)
@@ -241,6 +352,9 @@ func (m *MongoDb[T]) toD(v any) bson.M {
 			s := f.String()
 			tmp := bson.Binary{Data: unsafe.Slice(unsafe.StringData(s), len(s))}
 			ret[info.Name] = tmp
+			continue
+		}
+		if f.IsZero() && info.Name != "Session" {
 			continue
 		}
 		ret[info.Name] = f.Interface()
@@ -258,8 +372,6 @@ func m_primary(db int) string {
 	panic("不可达分支")
 }
 
-//TODO:复用bson.M
-//TODO:研究复用Data中创建的value
 //TODO:在出错时重试
 
 func (m *MongoDb[T]) Clear() {

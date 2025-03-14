@@ -64,16 +64,12 @@ func addSession(ctx *gin.Context, user *account.User) {
 	wc := safe.Encrypt(cookie)
 	ctx.SetCookie("session", wc, account.SessionMaxAge, "", "", true, true)
 
-	old1 := user.Session
-	old2 := user.SessionIndex
-
+	old := user.Session
 	user.Session[user.SessionIndex%3] = md5.Sum(unsafe.Slice(unsafe.StringData(se.Value), len(se.Value)))
-	user.SessionIndex++
-
 	//Note:这里不需要重试，如果有用户在极短时间重复登录，不是正常行为，是恶意攻击者有的行为
-	account.UserDb.Updata(user.Name, old1, "Session", user.Session)
-	//TODO:优化使用HIncrBy
-	account.UserDb.Updata(user.Name, old2, "SessionIndex", user.SessionIndex)
+	account.UserDb.UpdataSession(user.Name, user.SessionIndex%3, user.Session[user.SessionIndex%3], old, user.Session)
+	user.SessionIndex++
+	account.UserDb.IncField(user.Name, "SessionIndex")
 }
 
 func Close() {

@@ -75,7 +75,7 @@ func add(h map[string]any, fv reflect.Value, ft reflect.StructField) {
 		}
 		h[ft.Name] = unsafe.String(unsafe.SliceData(b), len(b))
 		return
-	case "Lock", "Ip":
+	case "Lock", "Ip", "Os", "OsVersion", "Device", "Broswer", "CreateTime":
 		return
 	case "Option":
 		for i := range fv.Len() {
@@ -83,7 +83,7 @@ func add(h map[string]any, fv reflect.Value, ft reflect.StructField) {
 			h["Option_num"+strconv.Itoa(i)] = fv.Index(i).Field(1).Interface()
 		}
 		return
-	case "End", "CreateTime": //vote.Info.End,account.Session.CreateTime
+	case "End": //vote.Info.End
 		b, _ := fv.Interface().(time.Time).MarshalText()
 		h[ft.Name] = unsafe.String(unsafe.SliceData(b), len(b))
 		return
@@ -333,9 +333,6 @@ func (r *RedisDb[T]) AddLoginNum(user string) int64 {
 
 func (r *RedisDb[T]) Updata(key string, old any, field string, v any) (ok bool) {
 	switch field {
-	case "SessionIndex":
-		old = strconv.Itoa(int(old.(uint8)))
-		v = strconv.Itoa(int(v.(uint8)))
 	case "Session", "VotedPath", "Comment", "Path":
 		b, err := json.Marshal(v)
 		if err != nil {
@@ -371,6 +368,24 @@ func (r *RedisDb[T]) Updata(key string, old any, field string, v any) (ok bool) 
 		return err
 	}, key)
 	return err == nil
+}
+
+func (r *RedisDb[T]) IncField(key string, field string) {
+	for i := range 10 {
+		err := r.rdb.HIncrBy(context.Background(), key, field, 1).Err()
+		if err == nil {
+			return
+		}
+		slog.Error("", "err", err)
+		if i == 9 {
+			panic(err)
+		}
+	}
+}
+
+func (r *RedisDb[T]) UpdataSession(key string, index uint8, _ [16]byte, old, new any) {
+	for !r.Updata(key, old, "Session", new) {
+	}
 }
 
 func (r *RedisDb[T]) IncOption(key string, i int, _, _ any) (ok bool) {

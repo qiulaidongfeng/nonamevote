@@ -184,3 +184,9 @@ func (t *OsDb[T]) IncOption(key string, i int, old any, v any) (ok bool) { retur
 
 // 为实现接口而写，实际无效果
 func (t *OsDb[T]) Clear() {}
+
+// 为实现接口而写，实际无效果
+func (t *OsDb[T]) IncField(key string, field string) {}
+
+// 为实现接口而写，实际无效果
+func (t *OsDb[T]) UpdataSession(key string, index uint8, v [16]byte, old, new any) {}

@@ -228,7 +228,7 @@ func (m *MongoDb[T]) UpdataSession(key string, index uint8, v [16]byte, _, _ any
 	}
 }
 
-func (m *MongoDb[T]) IncOption(key string, i int, old any, v any) (ok bool) {
+func (m *MongoDb[T]) IncOption(key string, i int, _ any, _ any) (ok bool) {
 	filter := m.filterPool.Get().(bson.M)
 	defer m.filterPool.Put(filter)
 	filter["_id"] = key

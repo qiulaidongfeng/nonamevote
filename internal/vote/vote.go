@@ -112,8 +112,8 @@ func ParserCreateVote(ctx *gin.Context) (*Info, error) {
 		ret.Option = append(ret.Option, Option{Name: options[i]})
 	}
 
-	len, add := Db.Add(ret)
-	path := "/vote/" + strconv.Itoa(len)
+	num, add := Db.Add(ret)
+	path := "/vote/" + strconv.Itoa(num)
 	ret.Path = path
 	add()
 
@@ -128,9 +128,8 @@ func ParserCreateVote(ctx *gin.Context) (*Info, error) {
 	} else {
 		for {
 			n.Lock.Lock()
-			old := slices.Clone(n.Path)
 			n.Path = append(n.Path, path)
-			if NameDb.Updata(ret.Name, old, "Path", n.Path) {
+			if NameDb.Updata(ret.Name, n.Path[:len(n.Path)-1], "Path", n.Path) {
 				n.Lock.Unlock()
 				break
 			}
@@ -224,9 +223,8 @@ func Init() {
 			Db.Changed()
 			for {
 				v.Lock.Lock()
-				old := slices.Clone(v.Comment)
 				v.Comment = append(v.Comment, comment)
-				if Db.Updata(v.Path, old, "Comment", v.Comment) {
+				if Db.Updata(v.Path, v.Comment[:len(v.Comment)-1], "Comment", v.Comment) {
 					v.Lock.Unlock()
 					break
 				}
@@ -294,9 +292,8 @@ func Init() {
 			return
 		}
 		for {
-			old := slices.Clone(user.VotedPath)
 			user.VotedPath = append(user.VotedPath, path)
-			if account.UserDb.Updata(user.Name, old, "VotedPath", user.VotedPath) {
+			if account.UserDb.Updata(user.Name, user.VotedPath[:len(user.VotedPath)-1], "VotedPath", user.VotedPath) {
 				break
 			}
 			user = account.UserDb.Find(se.Name)
@@ -308,7 +305,10 @@ func Init() {
 
 		Db.Changed()
 		for {
-			old := slices.Clone(v.Option)
+			var old any
+			if !config.NoCasUpdate {
+				old = slices.Clone(v.Option)
+			}
 			v.Option[opt].GotNum++
 			if Db.IncOption(path, opt, old, v.Option) {
 				break

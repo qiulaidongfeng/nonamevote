@@ -58,9 +58,15 @@ func ptr(v string) *string {
 	return &v
 }
 
+// 如果数据库对数组的更新操作不需要采用cas的方法
+var NoCasUpdate bool
+
 func init() {
 	v = newv()
 	loadConfig()
+	if GetDbMode() == "os" || GetDbMode() == "mongodb-redis" {
+		NoCasUpdate = true
+	}
 }
 
 func GetRedis() (host string, port string) {

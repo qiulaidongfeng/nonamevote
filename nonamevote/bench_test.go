@@ -110,6 +110,20 @@ func BenchmarkGetVote(b *testing.B) {
 	benchmark(b, req, nil, false)
 }
 
+func BenchmarkComment(b *testing.B) {
+	cookie := &http.Cookie{
+		Name:  "session",
+		Value: cv,
+	}
+	req := httptest.NewRequest("POST", "/vote/k?comment=true", nil)
+	req.PostForm = make(url.Values)
+	v := &req.PostForm
+	v.Set("commentValue", "1")
+	req.AddCookie(cookie)
+
+	benchmark(b, req, nil, false)
+}
+
 func benchmark(b *testing.B, req *http.Request, f func(*http.Request), test304 bool) {
 	defer func(start time.Time) {
 		total := time.Since(start).Seconds()

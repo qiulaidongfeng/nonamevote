@@ -56,7 +56,7 @@
 <body>
     <h1>所有投票</h1>
     <div class="vote-container">
-        {{range $i, $v := getAllVote}}
+        {{range $v := getAllVote}}
             <div class="vote-item">
                 <strong>{{$v.Name}}</strong>
                 <br>

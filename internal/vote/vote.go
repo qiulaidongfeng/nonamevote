@@ -347,16 +347,14 @@ var votetmpl = func() *template.Template {
 var allvotetmpl = func() *template.Template {
 	t := template.New("allvote")
 	m := template.FuncMap{
-		//TODO:等go模板支持range-over-func后，改为返回迭代器
-		"getAllVote": func() chan *Info {
-			c := make(chan *Info)
-			go func() {
+		"getAllVote": func() func(func(*Info) bool) {
+			return func(yield func(*Info) bool) {
 				for _, v := range Db.Data {
-					c <- v
+					if !yield(v) {
+						break
+					}
 				}
-				close(c)
-			}()
-			return c
+			}
 		}}
 	t.Funcs(m)
 	file, err := os.ReadFile(filepath.Join(tmpl, "allvote.temp"))

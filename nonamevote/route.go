@@ -2,7 +2,6 @@ package nonamevote
 
 import (
 	"encoding/base64"
-	"fmt"
 	"strings"
 	"unsafe"
 
@@ -135,13 +134,13 @@ func Handle(s *gin.Engine) {
 			ctx.Data(401, "text/html", createvote_fail)
 			return
 		}
-		_, err = vote.ParserCreateVote(ctx)
+		v, err := vote.ParserCreateVote(ctx)
 		if err != nil {
 			ctx.Data(400, "text/html", utils.GenTipText("创建投票失败："+err.Error(), "/createvote", "返回创建投票页"))
 			return
 		}
-		//TODO:跳转到新创建的投票页
-		ctx.Data(200, "text/html", createvote_ok)
+		ret := redirect(v.Path)
+		ctx.Data(200, "text/html", unsafe.Slice(unsafe.StringData(ret), len(ret)))
 	})
 	s.GET("/allvote", vote.AllVote)
 	s.GET("/exit", func(ctx *gin.Context) {
@@ -192,30 +191,35 @@ func Handle(s *gin.Engine) {
 			ctx.Data(404, "text/html", search_fail)
 			return
 		}
-		ret := `
-			<!DOCTYPE html>
-				<head>
-					<meta charset="UTF-8">
-				</head>
-				<body>
-				</body>
-				<script>
-					function f() {
-						window.location.href = "%s";
-					}
-					f();
-    			</script>
-			</html>
-			`
 		//TODO:支持查询有同名的投票
 		v.Lock.Lock()
 		//Note:添加进数据库的，v.Path[0]肯定有值
 		path := v.Path[0]
 		v.Lock.Unlock()
-		ret = fmt.Sprintf(ret, strings.Join([]string{"https://", ctx.Request.Host, path}, ""))
+		ret := redirect(strings.Join([]string{"https://", ctx.Request.Host, path}, ""))
 		ctx.Data(200, "text/html", unsafe.Slice(unsafe.StringData(ret), len(ret)))
 	})
 	s.GET("/robots.txt", func(ctx *gin.Context) {
 		ctx.String(200, rebots)
 	})
+}
+
+func redirect(path string) string {
+	var buf strings.Builder
+	buf.WriteString(`<!DOCTYPE html>
+	<head>
+		<meta charset="UTF-8">
+	</head>
+	<body>
+	</body>
+	<script>
+		function f() {
+			window.location.href ="`)
+	buf.WriteString(path)
+	buf.WriteString(`";
+		}
+		f();
+	</script>
+</html>`)
+	return buf.String()
 }

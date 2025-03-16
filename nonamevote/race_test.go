@@ -52,7 +52,7 @@ func TestRace(t *testing.T) {
 		v.Set("time", "11:00")
 		v.Set("introduce", "l")
 		v.Set("option", "k l")
-	}, 200, func(s string) bool { return strings.Contains(s, "创建投票成功") })
+	}, 200, func(s string) bool { return strings.Contains(s, "window.location.href") })
 	sendRequest(t, &wg, "GET", "/vote/k", func(req *http.Request, v *url.Values) {
 		req.AddCookie(&http.Cookie{
 			Name:  "session",
@@ -140,7 +140,7 @@ func sendRequest(t *testing.T, wg *sync.WaitGroup, method string, path string, f
 			s := unsafe.String(unsafe.SliceData(b), len(b))
 			if w.Code != code || (check != nil && !check(s)) {
 				t.Fail()
-				t.Log(method, path, w.Code, s)
+				t.Log(method, path, w.Code, code, s)
 			}
 		}()
 	}

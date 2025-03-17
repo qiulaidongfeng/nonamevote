@@ -223,8 +223,9 @@ func Init() {
 			Db.Changed()
 			for {
 				v.Lock.Lock()
+				old := v.Comment
 				v.Comment = append(v.Comment, comment)
-				if Db.Updata(v.Path, v.Comment[:len(v.Comment)-1], "Comment", v.Comment) {
+				if Db.Updata(v.Path, old, "Comment", v.Comment) {
 					v.Lock.Unlock()
 					break
 				}
@@ -292,8 +293,9 @@ func Init() {
 			return
 		}
 		for {
+			old := user.VotedPath
 			user.VotedPath = append(user.VotedPath, path)
-			if account.UserDb.Updata(user.Name, user.VotedPath[:len(user.VotedPath)-1], "VotedPath", user.VotedPath) {
+			if account.UserDb.Updata(user.Name, old, "VotedPath", user.VotedPath) {
 				break
 			}
 			user = account.UserDb.Find(se.Name)

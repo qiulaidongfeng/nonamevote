@@ -188,10 +188,7 @@ func (r *RedisDb[T]) Find(k string) T {
 				rv.FieldByName(k).Set(p.Elem())
 				continue
 			case "SessionIndex":
-				vv, err := strconv.ParseUint(v, 10, 8)
-				if err != nil {
-					panic(err)
-				}
+				vv, _ := strconv.ParseUint(v, 10, 8)
 				rv.FieldByName(k).SetUint(uint64(vv))
 				continue
 			case "End", "CreateTime":
@@ -384,8 +381,7 @@ func (r *RedisDb[T]) IncField(key string, field string) {
 }
 
 func (r *RedisDb[T]) UpdataSession(key string, index uint8, _ [16]byte, old, new any) {
-	for !r.Updata(key, old, "Session", new) {
-	}
+	r.Updata(key, old, "Session", new)
 }
 
 func (r *RedisDb[T]) IncOption(key string, i int, _, _ any) (ok bool) {

@@ -2,6 +2,7 @@ package data
 
 import (
 	"context"
+	"crypto/tls"
 	"log"
 	"reflect"
 	"strconv"
@@ -12,7 +13,6 @@ import (
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
-	"go.mongodb.org/mongo-driver/v2/mongo/readpref"
 )
 
 type MongoDb[T any] struct {
@@ -28,12 +28,15 @@ var _ Db[any] = (*MongoDb[any])(nil)
 
 var mongo_once = sync.OnceValue[*mongo.Client](func() *mongo.Client {
 	//TODO:让addr可配置
-	opt := options.Client().ApplyURI("mongodb://127.0.0.1:27017").SetMaxConnecting(100)
+	opt := options.Client().ApplyURI("mongodb://127.0.0.1:27017").SetTLSConfig(&tls.Config{
+		//仅使用tls1.3
+		//MinVersion: tls.VersionTLS13,
+	}).SetMaxConnecting(100)
 	db, err := mongo.Connect(opt)
 	if err != nil {
 		panic(err)
 	}
-	err = db.Ping(context.Background(), readpref.Primary())
+	err = db.Ping(context.Background(), nil)
 	if err != nil {
 		panic(err)
 	}

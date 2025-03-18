@@ -191,8 +191,11 @@ func (r *RedisDb[T]) Find(k string) T {
 				rv.FieldByName(k).Set(p.Elem())
 				continue
 			case "SessionIndex":
-				vv, _ := strconv.ParseUint(v, 10, 8)
-				rv.FieldByName(k).SetUint(uint64(vv))
+				vv, err := strconv.ParseUint(v, 10, 64)
+				if err != nil {
+					panic(err)
+				}
+				rv.FieldByName(k).SetUint(uint64(uint8(vv)))
 				continue
 			case "End", "CreateTime":
 				var t time.Time

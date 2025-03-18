@@ -2,6 +2,7 @@ package data
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -32,6 +33,8 @@ func NewRedisDb[T any](host string, port string, DB int, key func(T) string) *Re
 		ReadTimeout:  60 * time.Second,
 		WriteTimeout: 60 * time.Second,
 		DB:           DB,
+		Password:     config.GetRedisPassword(),
+		TLSConfig:    &tls.Config{MinVersion: tls.VersionTLS13},
 	})
 	r := &RedisDb[T]{rdb: rdb, key: key, db: DB}
 	return r

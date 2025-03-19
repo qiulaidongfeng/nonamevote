@@ -41,6 +41,8 @@ var config = struct {
 	mysqlpassword        atomic.Pointer[string]
 	mysqladdr            atomic.Pointer[string]
 	redisPassword        atomic.Pointer[string]
+	mongodbUser          atomic.Pointer[string]
+	mongodbPassword      atomic.Pointer[string]
 }{}
 
 func loadConfig() {
@@ -54,6 +56,8 @@ func loadConfig() {
 	config.mysqlpassword.Store(ptr(v.GetString("mysql.password")))
 	config.mysqladdr.Store(ptr(v.GetString("mysql.addr")))
 	config.redisPassword.Store(ptr(v.GetString("redis.password")))
+	config.mongodbUser.Store(ptr(v.GetString("mongodb.user")))
+	config.mongodbPassword.Store(ptr(v.GetString("mongodb.password")))
 }
 
 func ptr(v string) *string {
@@ -99,4 +103,12 @@ func GetDsnInfo() (user, password, addr string) {
 
 func GetRedisPassword() string {
 	return *config.redisPassword.Load()
+}
+
+func GetMongodbUser() string {
+	return *config.mongodbUser.Load()
+}
+
+func GetMongodbPassword() string {
+	return *config.mongodbPassword.Load()
 }

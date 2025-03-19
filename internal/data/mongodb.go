@@ -10,6 +10,7 @@ import (
 	"sync"
 	"unsafe"
 
+	"gitee.com/qiulaidongfeng/nonamevote/internal/config"
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
@@ -31,6 +32,9 @@ var mongo_once = sync.OnceValue[*mongo.Client](func() *mongo.Client {
 	opt := options.Client().ApplyURI("mongodb://127.0.0.1:27017").SetTLSConfig(&tls.Config{
 		//仅使用tls1.3
 		//MinVersion: tls.VersionTLS13,
+	}).SetAuth(options.Credential{
+		Username: config.GetMongodbUser(),
+		Password: config.GetMongodbPassword(),
 	}).SetMaxConnecting(100)
 	db, err := mongo.Connect(opt)
 	if err != nil {

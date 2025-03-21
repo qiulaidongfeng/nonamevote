@@ -73,7 +73,7 @@ var NoCasUpdate bool
 func init() {
 	v = newv()
 	loadConfig()
-	if GetDbMode() == "os" || GetDbMode() == "mongodb-redis" {
+	if GetDbMode() == "os" || GetDbMode() == "redis" || GetDbMode() == "mongodb-redis" {
 		NoCasUpdate = true
 	}
 }

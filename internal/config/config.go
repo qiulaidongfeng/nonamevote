@@ -6,6 +6,7 @@ import (
 	"sync/atomic"
 
 	"github.com/fsnotify/fsnotify"
+	"github.com/go-viper/encoding/ini"
 	"github.com/spf13/viper"
 )
 
@@ -14,7 +15,9 @@ var v *viper.Viper
 var Test bool = os.Getenv("TEST") != ""
 
 func newv() *viper.Viper {
-	v := viper.New()
+	codecRegistry := viper.NewCodecRegistry()
+	codecRegistry.RegisterCodec("ini", ini.Codec{})
+	v := viper.NewWithOptions(viper.WithCodecRegistry(codecRegistry))
 	prefix := ""
 	if Test {
 		prefix = "../"

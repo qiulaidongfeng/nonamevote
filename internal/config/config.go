@@ -1,3 +1,4 @@
+// Package config 封装获取配置
 package config
 
 import (

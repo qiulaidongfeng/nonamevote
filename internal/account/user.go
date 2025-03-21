@@ -1,3 +1,4 @@
+// Package accunt 提供用户信息定义和创建，登录会话
 package account
 
 import (

@@ -1,4 +1,4 @@
-// Package utils 提供跨包共享是实用功能
+// Package utils 提供跨包共享的实用功能
 package utils
 
 import "fmt"

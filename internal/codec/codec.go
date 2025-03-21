@@ -1,3 +1,4 @@
+// Package codec 实现编解码
 package codec
 
 import (

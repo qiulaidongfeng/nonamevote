@@ -1,3 +1,4 @@
+// Package rss 实现生成rss
 package rss
 
 import (

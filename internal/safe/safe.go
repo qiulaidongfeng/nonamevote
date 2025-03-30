@@ -18,7 +18,7 @@ func init() {
 		panic("环境变量main_key应该提供主密钥")
 	}
 	s := salt()
-	aes_key := argon2.IDKey(nil, s, 2, 64*1024, 4, 32)
+	aes_key := argon2.IDKey([]byte(main_key), s, 2, 64*1024, 4, 32)
 	block, err := aes.NewCipher(aes_key)
 	if err != nil {
 		panic(err)

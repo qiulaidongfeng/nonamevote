@@ -427,3 +427,18 @@ func (r *RedisDb[T]) Save() {}
 
 // 为实现接口而写，实际无效果
 func (r *RedisDb[T]) Changed() {}
+
+func (r *RedisDb[T]) LoadOrStoreStr(key, value string) (string, bool) {
+	b, err := r.rdb.SetNX(context.Background(), key, value, 0).Result()
+	if err != nil {
+		panic(err)
+	}
+	if b {
+		return value, b
+	}
+	s, err := r.rdb.Get(context.Background(), key).Result()
+	if err != nil {
+		panic(err)
+	}
+	return s, false
+}

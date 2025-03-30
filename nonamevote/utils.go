@@ -3,12 +3,17 @@ package nonamevote
 import (
 	"bytes"
 	"crypto/md5"
+	"errors"
 	"image/png"
 	"io"
+	"io/fs"
 	"net/http"
+	"os"
 	"unsafe"
 
 	"gitee.com/qiulaidongfeng/nonamevote/internal/account"
+	"gitee.com/qiulaidongfeng/nonamevote/internal/config"
+	"gitee.com/qiulaidongfeng/nonamevote/internal/data"
 	"gitee.com/qiulaidongfeng/nonamevote/internal/safe"
 	"gitee.com/qiulaidongfeng/nonamevote/internal/vote"
 	"github.com/gin-gonic/gin"
@@ -78,4 +83,37 @@ func Close() {
 	account.LoginNumDb.Save()
 	vote.Db.Save()
 	vote.NameDb.Save()
+}
+
+func checkKey() {
+	if config.GetDbMode() == "os" {
+		v, err := os.ReadFile("./check")
+		if err != nil {
+			if errors.Is(err, fs.ErrNotExist) {
+				fd, err := os.OpenFile("./check", os.O_RDWR|os.O_CREATE, 0600)
+				if err != nil {
+					panic(err)
+				}
+				_, err = fd.WriteString(safe.Encrypt("test"))
+				if err != nil {
+					panic(err)
+				}
+				return
+			}
+			panic(err)
+		}
+		if safe.Decrypt(string(v)) != "test" {
+			panic("两次启动使用了不同的主密钥")
+		}
+		return
+	}
+	v, set := data.IpCount.(interface {
+		LoadOrStoreStr(key, value string) (string, bool)
+	}).LoadOrStoreStr("key", safe.Encrypt("test"))
+	if set {
+		return
+	}
+	if safe.Decrypt(v) != "test" {
+		panic("两次启动使用了不同的主密钥")
+	}
 }

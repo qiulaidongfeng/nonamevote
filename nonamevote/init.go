@@ -2,6 +2,7 @@ package nonamevote
 
 func init() {
 	initHttps()
+	checkKey()
 	if imgIndex == -1 {
 		panic("应该有img在注册页")
 	}

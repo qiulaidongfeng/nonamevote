@@ -202,6 +202,20 @@ func Handle(s *gin.Engine) {
 	s.GET("/robots.txt", func(ctx *gin.Context) {
 		ctx.String(200, rebots)
 	})
+	s.GET("/deleteAccount", func(ctx *gin.Context) {
+		//先检查是否已登录
+		ok, err, se := account.CheckLogined(ctx)
+		if !ok {
+			if err != nil {
+				ctx.Data(401, "text/html", utils.GenTipText("登录失败："+err.Error(), "/login", "前往登录页"))
+				return
+			}
+			ctx.Data(401, "text/html", show_fail_nologin)
+			return
+		}
+		account.UserDb.Delete(se.Name)
+		ctx.Data(200, "text/html", delete_ok)
+	})
 }
 
 func redirect(path string) string {

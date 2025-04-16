@@ -40,6 +40,7 @@ const rebots = `
 User-agent: *
 Disallow: /exit
 Disallow: /showQRCode
+Disallow: /deleteAccount
 `
 
 var login_ok = utils.GenTipText("登录成功，您可以返回首页创建并进行投票", "/", "返回首页")
@@ -59,3 +60,4 @@ var exit_fail = utils.GenTipText("退出登录失败：您未登录或登录已�
 var exit_ok = utils.GenTipText("退出登录成功", "/", "返回首页")
 var show_fail_nologin = utils.GenTipText("您未登录", "/login", "前往登录页")
 var search_fail = utils.GenTipText("搜索失败：搜索的投票不存在", "/search", "返回")
+var delete_ok = utils.GenTipText("注销账号成功", "/", "返回首页")

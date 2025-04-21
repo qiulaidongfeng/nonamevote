@@ -2,6 +2,8 @@ package data
 
 import (
 	"encoding/json"
+	"errors"
+	"io/fs"
 
 	"gitee.com/qiulaidongfeng/nonamevote/internal/config"
 	"gitee.com/qiulaidongfeng/nonamevote/internal/run"
@@ -47,7 +49,7 @@ func (t *OsDb[T]) Load() {
 	defer t.lock.Unlock()
 	fd, err := os.OpenFile(t.t.Path, os.O_RDWR|os.O_APPEND, 0777)
 	if err != nil {
-		if os.IsNotExist(err) {
+		if errors.Is(err, fs.ErrNotExist) {
 			return
 		}
 		panic(err)

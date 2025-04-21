@@ -117,3 +117,15 @@ func checkKey() {
 		panic("两次启动使用了不同的主密钥")
 	}
 }
+
+func AddIpCount(ip string) int64 {
+	return data.IpCount.AddIpCount(ip)
+}
+
+func GetMaxCount() int64 {
+	return config.GetMaxCount()
+}
+
+func GetExpiration() int {
+	return config.GetExpiration()
+}

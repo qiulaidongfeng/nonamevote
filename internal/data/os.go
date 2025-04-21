@@ -3,6 +3,7 @@ package data
 import (
 	"encoding/json"
 	"errors"
+	"io"
 	"io/fs"
 
 	"gitee.com/qiulaidongfeng/nonamevote/internal/config"
@@ -62,7 +63,7 @@ func (t *OsDb[T]) Load() {
 		I int64
 	}{m, 0}
 	err = dn.Decode(&d)
-	if err != nil {
+	if err != nil && err != io.EOF {
 		panic(err)
 	}
 	for k, v := range m {

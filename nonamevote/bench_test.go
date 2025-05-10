@@ -23,6 +23,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/pquerna/otp"
 	"github.com/pquerna/otp/totp"
+	"github.com/qiulaidongfeng/safesession"
 )
 
 var cv string
@@ -168,7 +169,7 @@ func benchmark(b *testing.B, req *http.Request, f func(*http.Request), test304 b
 }
 
 func test_init() {
-	account.Test = true
+	safesession.Test = true
 	data.Test = true
 	config.Test = true
 	for _, v := range []any{account.UserDb, account.SessionDb, vote.Db, vote.NameDb, account.LoginNumDb} {

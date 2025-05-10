@@ -63,14 +63,10 @@ func genTotpImg(url string) []byte {
 
 func addSession(ctx *gin.Context, user *account.User) {
 	se := account.NewSession(ctx, user.Name)
-	//TODO:处理session value重复
-	account.SessionDb.AddKV(se.Value, se)
-	cookie := se.EnCode()
-	wc := safe.Encrypt(cookie)
-	ctx.SetCookie("session", wc, account.SessionMaxAge, "", "", true, true)
+	account.SessionControl.SetSession(&se, ctx.Writer)
 
 	old := user.Session
-	user.Session[user.SessionIndex%3] = md5.Sum(unsafe.Slice(unsafe.StringData(se.Value), len(se.Value)))
+	user.Session[user.SessionIndex%3] = md5.Sum(unsafe.Slice(unsafe.StringData(se.ID), len(se.ID)))
 	//Note:这里不需要重试，如果有用户在极短时间重复登录，不是正常行为，是恶意攻击者有的行为
 	account.UserDb.UpdataSession(user.Name, user.SessionIndex%3, user.Session[user.SessionIndex%3], old, user.Session)
 	user.SessionIndex++

@@ -11,6 +11,7 @@ import (
 )
 
 var gcm cipher.AEAD
+var Aeskey [32]byte
 
 func init() {
 	main_key := os.Getenv("main_key")
@@ -23,6 +24,7 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
+	Aeskey = [32]byte(aes_key)
 	gcm, err = cipher.NewGCMWithRandomNonce(block)
 	if err != nil {
 		panic(err)

@@ -10,9 +10,9 @@ import (
 	"testing"
 	"time"
 
-	"gitee.com/qiulaidongfeng/nonamevote/internal/account"
-	"gitee.com/qiulaidongfeng/nonamevote/internal/config"
-	"gitee.com/qiulaidongfeng/nonamevote/internal/safe"
+	"github.com/qiulaidongfeng/nonamevote/internal/account"
+	"github.com/qiulaidongfeng/nonamevote/internal/config"
+	"github.com/qiulaidongfeng/nonamevote/internal/safe"
 
 	"github.com/pquerna/otp"
 	"github.com/pquerna/otp/totp"

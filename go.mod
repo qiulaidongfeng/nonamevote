@@ -1,4 +1,4 @@
-module gitee.com/qiulaidongfeng/nonamevote
+module github.com/qiulaidongfeng/nonamevote
 
 go 1.24
 

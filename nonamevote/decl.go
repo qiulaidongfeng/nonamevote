@@ -5,9 +5,9 @@ import (
 	"path/filepath"
 
 	"gitee.com/qiulaidongfeng/cachefs"
-	"gitee.com/qiulaidongfeng/nonamevote/internal/config"
-	"gitee.com/qiulaidongfeng/nonamevote/internal/utils"
 	"github.com/gin-gonic/gin"
+	"github.com/qiulaidongfeng/nonamevote/internal/config"
+	"github.com/qiulaidongfeng/nonamevote/internal/utils"
 )
 
 var prefix = func() string {

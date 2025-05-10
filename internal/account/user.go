@@ -8,8 +8,8 @@ import (
 	"errors"
 	"fmt"
 
-	"gitee.com/qiulaidongfeng/nonamevote/internal/data"
-	"gitee.com/qiulaidongfeng/nonamevote/internal/safe"
+	"github.com/qiulaidongfeng/nonamevote/internal/data"
+	"github.com/qiulaidongfeng/nonamevote/internal/safe"
 	"github.com/pquerna/otp/totp"
 )
 

@@ -6,8 +6,8 @@ import (
 	"io"
 	"io/fs"
 
-	"gitee.com/qiulaidongfeng/nonamevote/internal/config"
-	"gitee.com/qiulaidongfeng/nonamevote/internal/run"
+	"github.com/qiulaidongfeng/nonamevote/internal/config"
+	"github.com/qiulaidongfeng/nonamevote/internal/run"
 
 	"os"
 	"sync"

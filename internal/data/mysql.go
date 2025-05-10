@@ -8,8 +8,8 @@ import (
 	"sync"
 	"unsafe"
 
-	"gitee.com/qiulaidongfeng/nonamevote/internal/config"
 	dm "github.com/go-sql-driver/mysql"
+	"github.com/qiulaidongfeng/nonamevote/internal/config"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )

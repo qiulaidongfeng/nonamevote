@@ -12,9 +12,9 @@ import (
 	"testing"
 	"unsafe"
 
-	"gitee.com/qiulaidongfeng/nonamevote/internal/account"
-	"gitee.com/qiulaidongfeng/nonamevote/internal/data"
-	"gitee.com/qiulaidongfeng/nonamevote/internal/vote"
+	"github.com/qiulaidongfeng/nonamevote/internal/account"
+	"github.com/qiulaidongfeng/nonamevote/internal/data"
+	"github.com/qiulaidongfeng/nonamevote/internal/vote"
 )
 
 const n = 500

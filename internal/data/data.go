@@ -1,7 +1,7 @@
 // Package data 提供数据库操作
 package data
 
-import "gitee.com/qiulaidongfeng/nonamevote/internal/config"
+import "github.com/qiulaidongfeng/nonamevote/internal/config"
 
 // Db 表示一个数据库的封装
 // 现有实现

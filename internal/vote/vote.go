@@ -14,10 +14,10 @@ import (
 	"time"
 	"unsafe"
 
-	"gitee.com/qiulaidongfeng/nonamevote/internal/account"
-	"gitee.com/qiulaidongfeng/nonamevote/internal/config"
-	"gitee.com/qiulaidongfeng/nonamevote/internal/data"
-	"gitee.com/qiulaidongfeng/nonamevote/internal/utils"
+	"github.com/qiulaidongfeng/nonamevote/internal/account"
+	"github.com/qiulaidongfeng/nonamevote/internal/config"
+	"github.com/qiulaidongfeng/nonamevote/internal/data"
+	"github.com/qiulaidongfeng/nonamevote/internal/utils"
 	"github.com/gin-gonic/gin"
 )
 

@@ -9,7 +9,7 @@ import (
 	"os/signal"
 	_ "time/tzdata"
 
-	"gitee.com/qiulaidongfeng/nonamevote/nonamevote"
+	"github.com/qiulaidongfeng/nonamevote/nonamevote"
 )
 
 func main() {

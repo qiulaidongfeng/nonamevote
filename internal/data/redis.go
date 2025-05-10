@@ -14,7 +14,7 @@ import (
 	"time"
 	"unsafe"
 
-	"gitee.com/qiulaidongfeng/nonamevote/internal/config"
+	"github.com/qiulaidongfeng/nonamevote/internal/config"
 	"github.com/redis/go-redis/v9"
 )
 

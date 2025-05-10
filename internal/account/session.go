@@ -13,12 +13,12 @@ import (
 	"time"
 	"unsafe"
 
-	"gitee.com/qiulaidongfeng/nonamevote/internal/config"
-	"gitee.com/qiulaidongfeng/nonamevote/internal/data"
-	"gitee.com/qiulaidongfeng/nonamevote/internal/safe"
 	"github.com/gin-gonic/gin"
 	"github.com/maxmind/mmdbinspect/pkg/mmdbinspect"
 	"github.com/oschwald/maxminddb-golang"
+	"github.com/qiulaidongfeng/nonamevote/internal/config"
+	"github.com/qiulaidongfeng/nonamevote/internal/data"
+	"github.com/qiulaidongfeng/nonamevote/internal/safe"
 	"github.com/qiulaidongfeng/safesession"
 )
 

@@ -15,14 +15,14 @@ import (
 	"testing"
 	"time"
 
-	"gitee.com/qiulaidongfeng/nonamevote/internal/account"
-	"gitee.com/qiulaidongfeng/nonamevote/internal/config"
-	"gitee.com/qiulaidongfeng/nonamevote/internal/data"
-	"gitee.com/qiulaidongfeng/nonamevote/internal/safe"
-	"gitee.com/qiulaidongfeng/nonamevote/internal/vote"
 	"github.com/gin-gonic/gin"
 	"github.com/pquerna/otp"
 	"github.com/pquerna/otp/totp"
+	"github.com/qiulaidongfeng/nonamevote/internal/account"
+	"github.com/qiulaidongfeng/nonamevote/internal/config"
+	"github.com/qiulaidongfeng/nonamevote/internal/data"
+	"github.com/qiulaidongfeng/nonamevote/internal/safe"
+	"github.com/qiulaidongfeng/nonamevote/internal/vote"
 	"github.com/qiulaidongfeng/safesession"
 )
 

@@ -125,3 +125,7 @@ func GetMaxCount() int64 {
 func GetExpiration() int {
 	return config.GetExpiration()
 }
+
+func GetAeskey() [32]byte {
+	return safe.Aeskey
+}

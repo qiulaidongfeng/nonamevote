@@ -31,7 +31,8 @@
             margin-bottom: 5px;  
         }  
         .form-group input, .form-group textarea {  
-            width: 100%;  
+            /*服务器改为100%*/
+            width: 100%%;  
             padding: 8px;  
             box-sizing: border-box;  
         }  
@@ -79,7 +80,9 @@
             <label for="option">选项：</label>  
             <textarea id="option" name="option" rows="4" cols="100" required></textarea>  
             <p>以选项1 选项2的格式填写选项文本，示例A B表示第一个选项叫A，第二个选项叫B。</p>  
-        </div>  
+        </div>
+        <!-- csrf_token 的实际值由服务器在响应https请求时填充 -->
+        <input type="hidden", name="csrf_token", value="%s" required>
         <div class="form-group">  
             <input type="submit" value="提交">  
         </div>  

@@ -36,6 +36,7 @@ func BenchmarkCreateVote(b *testing.B) {
 	req := httptest.NewRequest("POST", "/createvote", nil)
 	req.PostForm = make(url.Values)
 	v := &req.PostForm
+	v.Add("csrf_token", "p")
 	v.Set("name", randStr())
 	v.Set("date", "2029-1-1")
 	v.Set("time", "11:00")
@@ -241,8 +242,32 @@ func logink(t testing.TB) string {
 		panic("no session")
 	}
 	var cv string
+	var ok bool
+	var err error
+	var s safesession.Session
 	for _, v := range cookies {
 		if v.Name == "session" {
+			cv = v.Value
+			ok, err, s = account.SessionControl.CheckLogined("", "", v)
+			if !ok {
+				t.Fatal(ok)
+			}
+			if err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+	s.CSRF_TOKEN = "p"
+	w = httptest.NewRecorder()
+	changeSession(w, u, &s)
+	resp = w.Result()
+
+	cookies = resp.Cookies()
+	for _, v := range cookies {
+		if v.Name == "session" {
+			if cv == v.Value {
+				panic("no change")
+			}
 			cv = v.Value
 		}
 	}

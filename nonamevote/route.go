@@ -1,10 +1,16 @@
 package nonamevote
 
 import (
+	"crypto/rand"
 	"encoding/base64"
+	"fmt"
+	"io"
 	"strings"
 	"unsafe"
 
+	"github.com/gin-gonic/gin"
+	"github.com/pquerna/otp"
+	"github.com/pquerna/otp/totp"
 	"github.com/qiulaidongfeng/nonamevote/internal/account"
 	"github.com/qiulaidongfeng/nonamevote/internal/config"
 	"github.com/qiulaidongfeng/nonamevote/internal/data"
@@ -12,9 +18,6 @@ import (
 	"github.com/qiulaidongfeng/nonamevote/internal/safe"
 	"github.com/qiulaidongfeng/nonamevote/internal/utils"
 	"github.com/qiulaidongfeng/nonamevote/internal/vote"
-	"github.com/gin-gonic/gin"
-	"github.com/pquerna/otp"
-	"github.com/pquerna/otp/totp"
 )
 
 func Handle(s *gin.Engine) {
@@ -112,7 +115,7 @@ func Handle(s *gin.Engine) {
 	})
 	s.GET("/createvote", func(ctx *gin.Context) {
 		//先检查是否已登录
-		ok, err, _ := account.CheckLogined(ctx)
+		ok, err, s := account.CheckLogined(ctx)
 		if !ok {
 			if err != nil {
 				ctx.Data(401, "text/html", utils.GenTipText("登录失败："+err.Error(), "/login", "前往登录页"))
@@ -121,17 +124,30 @@ func Handle(s *gin.Engine) {
 			ctx.Data(401, "text/html", createvote_fail)
 			return
 		}
-		handleFile(ctx, "createvote.html")
+		b := cacheFile("createvote.html")
+		var csrf_token [32]byte
+		io.ReadFull(rand.Reader, csrf_token[:])
+		tmp := base64.StdEncoding.EncodeToString(csrf_token[:])
+		h := fmt.Sprintf(unsafe.String(unsafe.SliceData(b), len(b)), tmp)
+		s.CSRF_TOKEN = tmp
+		u := account.UserDb.Find(s.Name)
+		changeSession(ctx.Writer, u, &s)
+		ctx.Data(200, "text/html", unsafe.Slice(unsafe.StringData(h), len(h)))
 	})
 	s.POST("/createvote", func(ctx *gin.Context) {
 		//先检查是否已登录
-		ok, err, _ := account.CheckLogined(ctx)
+		ok, err, s := account.CheckLogined(ctx)
 		if !ok {
 			if err != nil {
 				ctx.Data(401, "text/html", utils.GenTipText("登录失败："+err.Error(), "/login", "前往登录页"))
 				return
 			}
 			ctx.Data(401, "text/html", createvote_fail)
+			return
+		}
+		tmp := ctx.PostForm("csrf_token")
+		if s.CSRF_TOKEN != tmp {
+			ctx.Data(401, "text/html", utils.GenTipText("创建投票失败：未通过安全检查", "/createvote", "重试"))
 			return
 		}
 		v, err := vote.ParserCreateVote(ctx)

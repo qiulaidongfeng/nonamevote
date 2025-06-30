@@ -30,6 +30,7 @@ func TestRace(t *testing.T) {
 			Name:  "session",
 			Value: cv,
 		})
+		req.PostForm.Add("csrf_token", "p")
 		v.Set("name", randStr())
 	}, 400, func(s string) bool {
 		return strings.Contains(s, "创建投票失败") && strings.Contains(s, "投票介绍不能为空")
@@ -52,6 +53,7 @@ func TestRace(t *testing.T) {
 		v.Set("time", "11:00")
 		v.Set("introduce", "l")
 		v.Set("option", "k l")
+		req.PostForm.Add("csrf_token", "p")
 	}, 200, func(s string) bool { return strings.Contains(s, "window.location.href") })
 	sendRequest(t, &wg, "GET", "/vote/k", func(req *http.Request, v *url.Values) {
 		req.AddCookie(&http.Cookie{
@@ -109,6 +111,12 @@ func TestRace(t *testing.T) {
 		})
 		v.Set("k", "0")
 	}, 200, func(s string) bool { return strings.Contains(s, "投票成功") })
+	sendRequest(t, &wg, "POST", "/createvote", func(req *http.Request, v *url.Values) {
+		req.AddCookie(&http.Cookie{
+			Name:  "session",
+			Value: cv,
+		})
+	}, 401, func(s string) bool { return strings.Contains(s, "创建投票失败：未通过安全检查") })
 	wg.Wait()
 
 	v := vote.Db.Find("/vote/k")

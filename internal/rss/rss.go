@@ -5,9 +5,9 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/gorilla/feeds"
 	"github.com/qiulaidongfeng/nonamevote/internal/config"
 	"github.com/qiulaidongfeng/nonamevote/internal/vote"
-	"github.com/gorilla/feeds"
 )
 
 func Generate() string {

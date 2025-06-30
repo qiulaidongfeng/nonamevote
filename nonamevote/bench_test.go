@@ -22,6 +22,7 @@ import (
 	"github.com/qiulaidongfeng/nonamevote/internal/config"
 	"github.com/qiulaidongfeng/nonamevote/internal/data"
 	"github.com/qiulaidongfeng/nonamevote/internal/safe"
+	"github.com/qiulaidongfeng/nonamevote/internal/utils"
 	"github.com/qiulaidongfeng/nonamevote/internal/vote"
 	"github.com/qiulaidongfeng/safesession"
 )
@@ -259,7 +260,7 @@ func logink(t testing.TB) string {
 	}
 	s.CSRF_TOKEN = "p"
 	w = httptest.NewRecorder()
-	changeSession(w, u, &s)
+	utils.ChangeSession(w, u, &s)
 	resp = w.Result()
 
 	cookies = resp.Cookies()

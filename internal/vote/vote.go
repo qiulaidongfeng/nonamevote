@@ -1,9 +1,12 @@
 package vote
 
 import (
+	"crypto/rand"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"html/template"
+	"io"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -14,11 +17,11 @@ import (
 	"time"
 	"unsafe"
 
+	"github.com/gin-gonic/gin"
 	"github.com/qiulaidongfeng/nonamevote/internal/account"
 	"github.com/qiulaidongfeng/nonamevote/internal/config"
 	"github.com/qiulaidongfeng/nonamevote/internal/data"
 	"github.com/qiulaidongfeng/nonamevote/internal/utils"
-	"github.com/gin-gonic/gin"
 )
 
 type Info struct {
@@ -165,15 +168,21 @@ var NameDb = data.NewDb(data.VoteName, func(n *NameAndPath) string { return n.Na
 func Init() {
 	S.GET("/vote/:num", func(ctx *gin.Context) {
 		// 先检查是否登录
-		logined, err, _ := account.CheckLogined(ctx)
+		logined, err, s := account.CheckLogined(ctx)
 		if err != nil {
 			ctx.String(401, err.Error())
 			return
 		}
+		var csrf_token [32]byte
+		io.ReadFull(rand.Reader, csrf_token[:])
+		tmp := base64.StdEncoding.EncodeToString(csrf_token[:])
+		s.CSRF_TOKEN = tmp
+		utils.ChangeSession(ctx.Writer, account.UserDb.Find(s.Name), &s)
 		// 根据是否登录决定能看到的网页，不登录不能投票
 		type gen struct {
 			*Info
-			Logined bool
+			Logined    bool
+			CSRF_TOKEN string
 		}
 		v := Db.Find(ctx.Request.URL.Path)
 		if v == nil {
@@ -182,7 +191,7 @@ func Init() {
 		}
 		var b strings.Builder
 		v.Lock.Lock()
-		err = votetmpl.Execute(&b, gen{Info: v, Logined: logined})
+		err = votetmpl.Execute(&b, gen{Info: v, Logined: logined, CSRF_TOKEN: tmp})
 		v.Lock.Unlock()
 		if err != nil {
 			//Note:这里大概是测试时执行的，然后修复，不会让用户看到
@@ -205,6 +214,11 @@ func Init() {
 			ctx.Data(401, "text/html", needlogin)
 			return
 		}
+		if se.CSRF_TOKEN != ctx.PostForm("csrf_token") {
+			ctx.Data(401, "text/html", utils.GenTipText("安全验证失败", ctx.Request.URL.Path, "重试"))
+			return
+		}
+
 		path := ctx.Request.URL.Path
 
 		//处理新增评论

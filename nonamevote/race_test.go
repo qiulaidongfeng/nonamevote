@@ -14,7 +14,9 @@ import (
 
 	"github.com/qiulaidongfeng/nonamevote/internal/account"
 	"github.com/qiulaidongfeng/nonamevote/internal/data"
+	"github.com/qiulaidongfeng/nonamevote/internal/utils"
 	"github.com/qiulaidongfeng/nonamevote/internal/vote"
+	"github.com/qiulaidongfeng/safesession"
 )
 
 const n = 500
@@ -66,8 +68,15 @@ func TestRace(t *testing.T) {
 			Name:  "session",
 			Value: cv,
 		})
+		req.PostForm.Add("csrf_token", "p")
 		v.Set("k", "0")
 	}, 401, func(s string) bool { return strings.Contains(s, "投票失败：因为已经投过票了") })
+	sendRequest(t, &wg, "POST", "/vote/k", func(req *http.Request, v *url.Values) {
+		req.AddCookie(&http.Cookie{
+			Name:  "session",
+			Value: cv,
+		})
+	}, 401, func(s string) bool { return strings.Contains(s, "安全验证失败") })
 	sendRequest(t, &wg, "GET", "/allvote", nil, 200, func(s string) bool { return strings.Contains(s, `<a href="/vote/k">`) })
 	sendRequest(t, &wg, "POST", "/search", func(r *http.Request, v *url.Values) {
 		v.Set("search", "k")
@@ -77,6 +86,7 @@ func TestRace(t *testing.T) {
 			Name:  "session",
 			Value: cv,
 		})
+		req.PostForm.Add("csrf_token", "p")
 		v.Set("commentValue", "0")
 	}, 200, func(s string) bool { return strings.Contains(s, "/vote/k") })
 	i := int64(0)
@@ -99,8 +109,33 @@ func TestRace(t *testing.T) {
 			panic("no session")
 		}
 		var cv string
+		var ok bool
+		var err error
+		var s safesession.Session
 		for _, v := range cookies {
 			if v.Name == "session" {
+				cv = v.Value
+			}
+			ok, err, s = account.SessionControl.CheckLogined("", "", v)
+			if !ok {
+				t.Fatal(ok)
+			}
+			if err != nil {
+				t.Fatal(err)
+			}
+		}
+		u := account.UserDb.Find(s.Name)
+		s.CSRF_TOKEN = "p"
+		w = httptest.NewRecorder()
+		utils.ChangeSession(w, u, &s)
+		resp = w.Result()
+
+		cookies = resp.Cookies()
+		for _, v := range cookies {
+			if v.Name == "session" {
+				if cv == v.Value {
+					panic("no change")
+				}
 				cv = v.Value
 			}
 		}
@@ -109,6 +144,7 @@ func TestRace(t *testing.T) {
 			Name:  "session",
 			Value: cv,
 		})
+		req.PostForm.Add("csrf_token", "p")
 		v.Set("k", "0")
 	}, 200, func(s string) bool { return strings.Contains(s, "投票成功") })
 	sendRequest(t, &wg, "POST", "/createvote", func(req *http.Request, v *url.Values) {

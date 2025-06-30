@@ -124,6 +124,7 @@
             {{end}}
         </div>
         {{if $logined}}
+            <input type="hidden", name="csrf_token", value="{{.CSRF_TOKEN}}" required>
             <button type="submit">提交</button>
         {{end}}
     </form>

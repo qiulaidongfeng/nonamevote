@@ -18,7 +18,6 @@ import (
 	"github.com/qiulaidongfeng/nonamevote/internal/data"
 	"github.com/qiulaidongfeng/nonamevote/internal/safe"
 	"github.com/qiulaidongfeng/nonamevote/internal/vote"
-	"github.com/qiulaidongfeng/safesession"
 )
 
 func cacheFile(file string) []byte {
@@ -72,10 +71,6 @@ func addSession(ctx *gin.Context, user *account.User) {
 	account.UserDb.UpdataSession(user.Name, user.SessionIndex%3, user.Session[user.SessionIndex%3], old, user.Session)
 	user.SessionIndex++
 	account.UserDb.IncField(user.Name, "SessionIndex")
-}
-
-func changeSession(w http.ResponseWriter, user *account.User, se *safesession.Session) {
-	account.SessionControl.SetSession(se, w)
 }
 
 func Close() {

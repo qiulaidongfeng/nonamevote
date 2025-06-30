@@ -1,7 +1,13 @@
 // Package utils 提供跨包共享的实用功能
 package utils
 
-import "fmt"
+import (
+	"fmt"
+	"net/http"
+
+	"github.com/qiulaidongfeng/nonamevote/internal/account"
+	"github.com/qiulaidongfeng/safesession"
+)
 
 func GenTipText(text string, gotourl string, urlname string) []byte {
 	return []byte(fmt.Sprintf(`
@@ -44,4 +50,8 @@ func GenTipText(text string, gotourl string, urlname string) []byte {
 </body>
 </html>
 	`, text, gotourl, urlname))
+}
+
+func ChangeSession(w http.ResponseWriter, user *account.User, se *safesession.Session) {
+	account.SessionControl.SetSession(se, w)
 }

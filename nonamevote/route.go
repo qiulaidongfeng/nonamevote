@@ -131,7 +131,7 @@ func Handle(s *gin.Engine) {
 		h := fmt.Sprintf(unsafe.String(unsafe.SliceData(b), len(b)), tmp)
 		s.CSRF_TOKEN = tmp
 		u := account.UserDb.Find(s.Name)
-		changeSession(ctx.Writer, u, &s)
+		utils.ChangeSession(ctx.Writer, u, &s)
 		ctx.Data(200, "text/html", unsafe.Slice(unsafe.StringData(h), len(h)))
 	})
 	s.POST("/createvote", func(ctx *gin.Context) {

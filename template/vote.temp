@@ -144,6 +144,7 @@
         {{if $logined}}
             <form class="comment-form" action="{{.Path}}?comment=true" method="post">
                 <textarea name="commentValue" class="comment-textarea" required></textarea>
+                <input type="hidden", name="csrf_token", value="{{.CSRF_TOKEN}}" required>
                 <button type="submit">提交</button>
             </form>
         {{end}}

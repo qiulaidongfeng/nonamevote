@@ -59,7 +59,7 @@ const (
 func NewDb[T any](typ int, key func(T) string) Db[T] {
 	host, path := config.GetRedis()
 	os := config.GetDbMode() == "os"
-	mysql := config.GetDbMode() == "mysql-redis"
+	mysql := config.GetDbMode() == "mysql-os-redis"
 	file := ""
 	switch typ {
 	case Ip:
@@ -76,16 +76,16 @@ func NewDb[T any](typ int, key func(T) string) Db[T] {
 	}
 	//如果是os模式，全部使用OsDb
 	//如果是redis模式，全部使用RedisDb
-	//如果是mysql-redis模式，除Ip和LoginNum数据库和Session数据库用RedisDb,其他用MysqlDb
-	if os {
+	//如果是mysql-os-redis模式，除Ip数据库用OsDb，LoginNum数据库和Session数据库用RedisDb,其他用MysqlDb
+	if typ == Ip || os {
 		r := NewOsDb(file, key)
 		r.ipDb = typ == Ip
 		return r
 	}
-	if typ == Ip || typ == LoginNum || typ == Session {
+	if typ == LoginNum || typ == Session {
 		return NewRedisDb(host, path, typ, key)
 	}
-	if config.GetDbMode() == "mongodb-redis" {
+	if config.GetDbMode() == "mongodb-os-redis" {
 		return NewMongoDb[T](typ, key)
 	}
 	if mysql {

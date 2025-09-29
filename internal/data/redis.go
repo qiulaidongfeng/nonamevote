@@ -234,7 +234,12 @@ func (r *RedisDb[T]) Find(k string) T {
 }
 
 func grow(v reflect.Value, i int) {
-	v.Grow(i + 1)
+	i = max(v.Len(), i+1)
+	n := reflect.MakeSlice(v.Type(), i, i)
+	for i := range v.Len() {
+		n.Index(i).Set(v.Index(i))
+	}
+	v.Set(n)
 }
 
 func (r *RedisDb[T]) Data(yield func(string, T) bool) {

@@ -143,15 +143,6 @@ func (r *RedisDb[T]) AddKV(k string, v T) (ok bool) {
 }
 
 func (r *RedisDb[T]) Find(k string) T {
-	if r.db == Ip {
-		c := r.rdb.Get(context.Background(), k)
-		r, _ := c.Result()
-		var ret T
-		a := any(&ret).(*int)
-		*a, _ = strconv.Atoi(r)
-		return ret
-	}
-
 	var ret map[string]string
 	var err error
 	for i := range 10 {

@@ -103,7 +103,7 @@ func checkKey() {
 		}
 		return
 	}
-	v, set := data.IpCount.(interface {
+	v, set := account.SessionDb.(interface {
 		LoadOrStoreStr(key, value string) (string, bool)
 	}).LoadOrStoreStr("key", safe.Encrypt("test"))
 	if set {

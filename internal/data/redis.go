@@ -234,6 +234,9 @@ func (r *RedisDb[T]) Find(k string) T {
 }
 
 func grow(v reflect.Value, i int) {
+	if v.Len() >= i+1 {
+		return
+	}
 	i = max(v.Len(), i+1)
 	n := reflect.MakeSlice(v.Type(), i, i)
 	for i := range v.Len() {
@@ -258,7 +261,7 @@ func (r *RedisDb[T]) Data(yield func(string, T) bool) {
 			continue
 		}
 		for i := range keys {
-			if keys[i] == "i" && r.db == Vote {
+			if keys[i] == "i" && r.db == Vote || (keys[i] == "key" && r.db == Session) {
 				continue
 			}
 			v := r.Find(keys[i])

@@ -237,10 +237,7 @@ func Init() {
 			Db.Changed()
 			for {
 				v.Lock.Lock()
-				var old any
-				if !config.NoCasUpdate {
-					old = slices.Clone(v.Comment)
-				}
+				old := v.Comment
 				v.Comment = append(v.Comment, comment)
 				if Db.Updata(v.Path, old, "Comment", v.Comment) {
 					v.Lock.Unlock()
@@ -309,7 +306,6 @@ func Init() {
 			ctx.String(401, "投票失败")
 			return
 		}
-		//Note: 这里两个for之间如果进程突然崩溃，会导致记录已投票，但没有增加得票数。
 		for {
 			old := user.VotedPath
 			user.VotedPath = append(user.VotedPath, path)

@@ -78,7 +78,7 @@ func (m *MysqlDb[T]) AddKV(k string, v T) (ok bool) {
 	result := m.db.Create(v)
 	ok = true
 	if result.Error != nil {
-		if e, ok := result.Error.(*dm.MySQLError); ok && e.Number == 1062 { //如果已经存在
+		if e, o := result.Error.(*dm.MySQLError); o && e.Number == 1062 { //如果已经存在
 			ok = false
 		} else {
 			panic(result.Error)

@@ -13,7 +13,6 @@ import (
 	"github.com/pquerna/otp/totp"
 	"github.com/qiulaidongfeng/nonamevote/internal/account"
 	"github.com/qiulaidongfeng/nonamevote/internal/config"
-	"github.com/qiulaidongfeng/nonamevote/internal/data"
 	"github.com/qiulaidongfeng/nonamevote/internal/rss"
 	"github.com/qiulaidongfeng/nonamevote/internal/safe"
 	"github.com/qiulaidongfeng/nonamevote/internal/utils"
@@ -22,17 +21,6 @@ import (
 
 func Handle(s *gin.Engine) {
 	vote.S = S
-	s.Use(func(ctx *gin.Context) {
-		ip := ctx.RemoteIP()
-		count := data.IpCount.AddIpCount(ip)
-		expiration := config.GetExpiration()
-		maxcount := config.GetMaxCount()
-		if count > maxcount {
-			ctx.String(403, "%d秒内这个ip(%s)访问网站超过%d次，请等%d秒后再访问网站", expiration, ip, maxcount, expiration)
-			ctx.Abort()
-		}
-		ctx.Next()
-	})
 	vote.Init()
 	s.GET("/", func(ctx *gin.Context) {
 		handleFile(ctx, "index.html")

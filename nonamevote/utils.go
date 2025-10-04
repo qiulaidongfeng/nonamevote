@@ -129,3 +129,7 @@ func GetExpiration() int {
 func GetAeskey() [32]byte {
 	return safe.Aeskey
 }
+
+func GetIpLimitInfo() string {
+	return config.GetIpLimitInfo()
+}

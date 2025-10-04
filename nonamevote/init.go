@@ -1,5 +1,11 @@
 package nonamevote
 
+import (
+	"github.com/gin-gonic/gin"
+	"github.com/qiulaidongfeng/nonamevote/internal/config"
+	"github.com/qiulaidongfeng/nonamevote/internal/data"
+)
+
 func init() {
 	initHttps()
 	checkKey()
@@ -11,5 +17,15 @@ func init() {
 	}
 
 	S.UseH2C = true
+	S.Use(func(ctx *gin.Context) {
+		ip := ctx.RemoteIP()
+		count := data.IpCount.AddIpCount(ip)
+		maxcount := config.GetMaxCount()
+		if count > maxcount {
+			ctx.String(429, config.GetIpLimitInfo())
+			ctx.Abort()
+		}
+		ctx.Next()
+	})
 	Handle(S)
 }

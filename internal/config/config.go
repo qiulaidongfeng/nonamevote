@@ -47,6 +47,7 @@ var config = struct {
 	redisPassword        atomic.Pointer[string]
 	mongodbUser          atomic.Pointer[string]
 	mongodbPassword      atomic.Pointer[string]
+	iplimit_info         atomic.Pointer[string]
 }{}
 
 func loadConfig() {
@@ -62,6 +63,7 @@ func loadConfig() {
 	config.redisPassword.Store(ptr(v.GetString("redis.password")))
 	config.mongodbUser.Store(ptr(v.GetString("mongodb.user")))
 	config.mongodbPassword.Store(ptr(v.GetString("mongodb.password")))
+	config.iplimit_info.Store(ptr(fmt.Sprintf("%d秒内您的ip访问超过%d次，请等%d秒再访问", config.expiration.Load(), config.maxcount.Load(), config.expiration.Load())))
 }
 
 func ptr(v string) *string {
@@ -115,4 +117,8 @@ func GetMongodbUser() string {
 
 func GetMongodbPassword() string {
 	return *config.mongodbPassword.Load()
+}
+
+func GetIpLimitInfo() string {
+	return *config.iplimit_info.Load()
 }

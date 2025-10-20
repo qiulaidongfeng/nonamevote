@@ -61,22 +61,24 @@ func NewSession(ctx *gin.Context, Name string) Session {
 
 var findIpMode = 1
 
-var mmdb_db = func() *maxminddb.Reader {
-	prefix := ""
-	if config.Test {
-		prefix = "../"
-	}
-	db, err := mmdbinspect.OpenDB(prefix + "country_asn.mmdb")
-	if err != nil {
-		panic(err)
-	}
-	return db
-}()
+var mmdb_db *maxminddb.Reader
 
 func init() {
 	mode := os.Getenv("nonamevote_findIP")
 	if mode == "remote" {
 		findIpMode = 2
+	} else {
+		mmdb_db = func() *maxminddb.Reader {
+			prefix := ""
+			if config.Test {
+				prefix = "../"
+			}
+			db, err := mmdbinspect.OpenDB(prefix + "country_asn.mmdb")
+			if err != nil {
+				panic(err)
+			}
+			return db
+		}()
 	}
 }
 

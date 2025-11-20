@@ -16,13 +16,13 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/maxmind/mmdbinspect/pkg/mmdbinspect"
 	"github.com/oschwald/maxminddb-golang"
+	"github.com/qiulaidongfeng/key"
 	"github.com/qiulaidongfeng/nonamevote/internal/config"
 	"github.com/qiulaidongfeng/nonamevote/internal/data"
 	"github.com/qiulaidongfeng/safesession"
-	"github.com/qiulaidongfeng/key"
 )
 
-var SessionControl = safesession.NewControl(key.Aeskey, sessionMaxAge, 0, func(clientIp string) safesession.IPInfo {
+var SessionControl = safesession.NewControl(key.Encrypt, key.Decrypt, sessionMaxAge, 0, func(clientIp string) safesession.IPInfo {
 	i, err := getIPInfo(clientIp)
 	if err != nil {
 		panic(err)

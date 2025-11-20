@@ -14,7 +14,7 @@ import (
 	"github.com/qiulaidongfeng/nonamevote/internal/account"
 	"github.com/qiulaidongfeng/nonamevote/internal/config"
 	"github.com/qiulaidongfeng/nonamevote/internal/rss"
-	"github.com/qiulaidongfeng/nonamevote/internal/safe"
+	"github.com/qiulaidongfeng/key"
 	"github.com/qiulaidongfeng/nonamevote/internal/utils"
 	"github.com/qiulaidongfeng/nonamevote/internal/vote"
 )
@@ -90,7 +90,7 @@ func Handle(s *gin.Engine) {
 			ctx.Data(401, "text/html", login_fail_too_often)
 			return
 		}
-		key, err := otp.NewKeyFromURL(safe.Decrypt(user.TotpURL))
+		key, err := otp.NewKeyFromURL(key.Decrypt(user.TotpURL))
 		if err != nil {
 			panic(err)
 		}
@@ -173,7 +173,7 @@ func Handle(s *gin.Engine) {
 			ctx.String(401, "没有这个用户")
 			return
 		}
-		buf := genTotpImg(safe.Decrypt(user.TotpURL))
+		buf := genTotpImg(key.Decrypt(user.TotpURL))
 		data := cacheFile("showQRCode.html")
 		ctx.Writer.WriteHeader(200)
 		ctx.Writer.Write(data[:imgIndex2])

@@ -13,10 +13,10 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/pquerna/otp"
+	"github.com/qiulaidongfeng/key"
 	"github.com/qiulaidongfeng/nonamevote/internal/account"
 	"github.com/qiulaidongfeng/nonamevote/internal/config"
 	"github.com/qiulaidongfeng/nonamevote/internal/data"
-	"github.com/qiulaidongfeng/nonamevote/internal/safe"
 	"github.com/qiulaidongfeng/nonamevote/internal/vote"
 )
 
@@ -90,7 +90,7 @@ func checkKey() {
 				if err != nil {
 					panic(err)
 				}
-				_, err = fd.WriteString(safe.Encrypt("test"))
+				_, err = fd.WriteString(key.Encrypt("test"))
 				if err != nil {
 					panic(err)
 				}
@@ -98,18 +98,18 @@ func checkKey() {
 			}
 			panic(err)
 		}
-		if safe.Decrypt(string(v)) != "test" {
+		if key.Decrypt(string(v)) != "test" {
 			panic("两次启动使用了不同的主密钥")
 		}
 		return
 	}
 	v, set := account.SessionDb.(interface {
 		LoadOrStoreStr(key, value string) (string, bool)
-	}).LoadOrStoreStr("key", safe.Encrypt("test"))
+	}).LoadOrStoreStr("key", key.Encrypt("test"))
 	if set {
 		return
 	}
-	if safe.Decrypt(v) != "test" {
+	if key.Decrypt(v) != "test" {
 		panic("两次启动使用了不同的主密钥")
 	}
 }
@@ -126,8 +126,9 @@ func GetExpiration() int {
 	return config.GetExpiration()
 }
 
+// TODO:删除
 func GetAeskey() [32]byte {
-	return safe.Aeskey
+	return key.Aeskey
 }
 
 func GetIpLimitInfo() string {

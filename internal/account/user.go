@@ -8,9 +8,9 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/qiulaidongfeng/nonamevote/internal/data"
-	"github.com/qiulaidongfeng/nonamevote/internal/safe"
 	"github.com/pquerna/otp/totp"
+	"github.com/qiulaidongfeng/key"
+	"github.com/qiulaidongfeng/nonamevote/internal/data"
 )
 
 type User struct {
@@ -39,7 +39,7 @@ func (a allSession) Value() (driver.Value, error) {
 }
 
 func NewUser(Name string) (*User, string, error) {
-	key, err := totp.Generate(totp.GenerateOpts{
+	otpkey, err := totp.Generate(totp.GenerateOpts{
 		Issuer:      "无记名投票",
 		AccountName: Name,
 		SecretSize:  64,
@@ -48,8 +48,8 @@ func NewUser(Name string) (*User, string, error) {
 	if err != nil {
 		panic(err)
 	}
-	url := key.URL()
-	user := User{Name: Name, TotpURL: safe.Encrypt(key.URL())}
+	url := otpkey.URL()
+	user := User{Name: Name, TotpURL: key.Encrypt(otpkey.URL())}
 	if !UserDb.AddKV(Name, &user) {
 		return nil, "", fmt.Errorf("用户名 %s 已被注册", Name)
 	}

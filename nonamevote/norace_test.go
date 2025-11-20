@@ -10,9 +10,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/qiulaidongfeng/key"
 	"github.com/qiulaidongfeng/nonamevote/internal/account"
 	"github.com/qiulaidongfeng/nonamevote/internal/config"
-	"github.com/qiulaidongfeng/nonamevote/internal/safe"
 
 	"github.com/pquerna/otp"
 	"github.com/pquerna/otp/totp"
@@ -23,7 +23,7 @@ func BenchmarkLogin(b *testing.B) {
 
 	benchmark(b, req, func(req *http.Request) {
 		u := account.UserDb.Find("k")
-		k, _ := otp.NewKeyFromURL(safe.Decrypt(u.TotpURL))
+		k, _ := otp.NewKeyFromURL(key.Decrypt(u.TotpURL))
 		code, _ := totp.GenerateCodeCustom(k.Secret(), time.Now(), totp.ValidateOpts{})
 
 		req.PostForm = url.Values{

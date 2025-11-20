@@ -77,7 +77,7 @@ func initHttps() {
 		}
 		panic(err)
 	}
-	key, err = os.ReadFile("./key.pem")
+	rsakey, err = os.ReadFile("./key.pem")
 	if err != nil {
 		panic(err)
 	}

@@ -30,7 +30,7 @@ var imgIndex2 = bytes.LastIndex(cacheFile("showQRCode.html"), []byte("<img>"))
 
 var (
 	cert []byte
-	key  []byte
+	rsakey  []byte
 	S    = gin.Default()
 )
 

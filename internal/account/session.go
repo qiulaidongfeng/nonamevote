@@ -155,5 +155,10 @@ func CheckLogined(ctx *gin.Context) (bool, error, Session) {
 	if err != nil {
 		panic(err)
 	}
-	return SessionControl.CheckLogined(ctx.ClientIP(), ctx.Request.UserAgent(), cs)
+	login, err, s := SessionControl.CheckLogined(ctx.ClientIP(), ctx.Request.UserAgent(), cs)
+	if !login {
+		cs.MaxAge = -1
+		http.SetCookie(ctx.Writer, cs)
+	}
+	return login, err, s
 }

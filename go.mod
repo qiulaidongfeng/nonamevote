@@ -13,7 +13,7 @@ require (
 	github.com/oschwald/maxminddb-golang v1.13.1
 	github.com/pquerna/otp v1.5.0
 	github.com/qiulaidongfeng/key v1.0.0
-	github.com/qiulaidongfeng/safesession v0.3.1
+	github.com/qiulaidongfeng/safesession v0.4.0
 	github.com/redis/go-redis/v9 v9.17.0
 	github.com/spf13/viper v1.21.0
 	go.mongodb.org/mongo-driver/v2 v2.4.0

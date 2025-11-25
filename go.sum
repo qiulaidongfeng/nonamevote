@@ -98,6 +98,8 @@ github.com/qiulaidongfeng/key v1.0.0 h1:zKXFs4z6pJB42qc2PzcSubWaUf2rFDxjOJFA4Y2Z
 github.com/qiulaidongfeng/key v1.0.0/go.mod h1:/QlDQt/w+mEz6NervzF6GUAoy3AwiaA7h7y4nUAesg4=
 github.com/qiulaidongfeng/safesession v0.3.1 h1:VIL4svmLXKSV+yn84w6vJt9w1nTdfRq8sqI0JFDT0/M=
 github.com/qiulaidongfeng/safesession v0.3.1/go.mod h1:akjO+1nzphxPiYhS8qhQpgrg/Kn0W3/nb/zroF3QLAE=
+github.com/qiulaidongfeng/safesession v0.4.0 h1:mWnXD7n1bUcWYyWHMdJYrnKotDkgtbba6yjqkOGSlCU=
+github.com/qiulaidongfeng/safesession v0.4.0/go.mod h1:akjO+1nzphxPiYhS8qhQpgrg/Kn0W3/nb/zroF3QLAE=
 github.com/quic-go/qpack v0.5.1 h1:giqksBPnT/HDtZ6VhtFKgoLOWmlyo9Ei6u9PqzIMbhI=
 github.com/quic-go/qpack v0.5.1/go.mod h1:+PC4XFrEskIVkcLzpEkbLqq1uCoxPhQuvK5rH1ZgaEg=
 github.com/quic-go/quic-go v0.56.0 h1:q/TW+OLismmXAehgFLczhCDTYB3bFmua4D9lsNBWxvY=

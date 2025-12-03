@@ -1,32 +1,29 @@
 services:
   redis:
     image: redis:latest
-    ports:
-      - "6379:6379"
-    #network_mode: host
-    volumes:
-      - D:\redis:/etc/redis:ro
-    command: redis-server /etc/redis/redis.conf
+    # ports:
+    #   - "6379:6379"
+    network_mode: host
+    command: ["redis-server","--requirepass","123456","--protected-mode", "no"]
   mongodb:
     image: mongo
-    ports:
-      - "27017:27017"
+    # ports:
+    #   - "27017:27017"
     environment:
       - MONGO_INITDB_ROOT_USERNAME=test
       - MONGO_INITDB_ROOT_PASSWORD=123456
-    volumes:
-      - D:\file\testca\all.pem:/opt/all.pem:ro
-      - D:\file\testca\ca.crt:/opt/ca.crt:ro
-    command: mongod --tlsMode requireTLS --tlsCertificateKeyFile /opt/all.pem --tlsCAFile /opt/ca.crt --tlsAllowConnectionsWithoutCertificates
-    #network_mode: host
+    network_mode: host
   web:
     image: mynonamevote
-    ports:
-      - "443:443"
+    # ports:
+    #   - "443:443"
     #TODO:用更安全的方式传递主密钥
     environment:
+      - DB.MODE=mongodb-os-redis
+      - MONGODB.USER=test
+      - MONGODB.PASSWORD=123456
       - main_key=${main_key}
-    #network_mode: host
+    network_mode: host
     depends_on:
       - redis
       - mongodb

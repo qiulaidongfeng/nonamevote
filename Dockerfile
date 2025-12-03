@@ -27,11 +27,6 @@ COPY --from=builder /opt/template /opt/template
 
 COPY --from=builder /opt/salt /opt/salt
 
-# TODO:tls证书不打包进容器
-COPY --from=builder /opt/cert.pem /opt/cert.pem
-
-COPY --from=builder /opt/key.pem /opt/key.pem
-
 # 开放443端口
 EXPOSE 443
 

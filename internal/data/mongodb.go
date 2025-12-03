@@ -2,7 +2,6 @@ package data
 
 import (
 	"context"
-	"crypto/tls"
 	"log"
 	"reflect"
 	"strconv"
@@ -29,10 +28,7 @@ var _ Db[any] = (*MongoDb[any])(nil)
 
 var mongo_once = sync.OnceValue[*mongo.Client](func() *mongo.Client {
 	//TODO:让addr可配置
-	opt := options.Client().ApplyURI("mongodb://127.0.0.1:27017").SetTLSConfig(&tls.Config{
-		//仅使用tls1.3
-		//MinVersion: tls.VersionTLS13,
-	}).SetAuth(options.Credential{
+	opt := options.Client().ApplyURI("mongodb://127.0.0.1:27017").SetAuth(options.Credential{
 		Username: config.GetMongodbUser(),
 		Password: config.GetMongodbPassword(),
 	}).SetMaxConnecting(100)

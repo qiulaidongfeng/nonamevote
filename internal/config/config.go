@@ -24,6 +24,7 @@ func newv() *viper.Viper {
 		prefix = "../"
 	}
 	v.SetConfigFile(prefix + "config.ini")
+	v.AutomaticEnv()
 	v.OnConfigChange(func(e fsnotify.Event) {
 		loadConfig()
 		fmt.Println("Config file changed:", e.Name)
